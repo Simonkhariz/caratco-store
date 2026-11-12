@@ -1,0 +1,530 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  /* The shop's own colours. These are only the fallbacks: app/layout.tsx sets them on <html>
+     from backend/config/shop.json. */
+  --accent: #000000;
+  --accent-hover: #262626;
+  --accent-ink: #ffffff;
+  --surface: #F0F0F0;
+  --card: #F0EEED;
+  --hero: #F2F0F1;
+  /* --font-space-grotesk / --font-satoshi come from next/font in app/layout.tsx (self-hosted). */
+  --font-heading: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: var(--font-satoshi), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Streetwear Heading & Title Utility - Expert Responsive Space Grotesk Boldness */
+.font-integral,
+.font-heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  -webkit-text-stroke: 0.35px currentColor;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tablet (sm: 640px+) */
+@media (min-width: 640px) {
+  .font-integral,
+  .font-heading {
+    letter-spacing: -0.035em;
+    -webkit-text-stroke: 0.45px currentColor;
+  }
+}
+
+/* Desktop (lg: 1024px+) */
+@media (min-width: 1024px) {
+  .font-integral,
+  .font-heading {
+    letter-spacing: -0.045em;
+    -webkit-text-stroke: 0.6px currentColor;
+  }
+}
+
+/* Large Displays (xl: 1280px+) */
+@media (min-width: 1280px) {
+  .font-integral,
+  .font-heading {
+    letter-spacing: -0.05em;
+    -webkit-text-stroke: 0.75px currentColor;
+  }
+}
+
+/* Body / Paragraph Font Utility */
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Custom Hide Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom range slider styling for filters */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--accent);
+  height: 6px;
+  border-radius: 9999px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -7px;
+  background-color: var(--accent);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+}
+
+/* Kravio Admin Dashboard Utilities & Animations */
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rise-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes draw-x {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes grow-y {
+  0% {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes ring {
+  0%, 100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-12deg);
+  }
+  60% {
+    transform: rotate(8deg);
+  }
+  80% {
+    transform: rotate(-4deg);
+  }
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(14deg);
+  }
+  30% {
+    transform: rotate(-8deg);
+  }
+  45% {
+    transform: rotate(14deg);
+  }
+  60% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.52s var(--ease-out-expo) both;
+}
+
+.animate-fade {
+  animation: 0.3s ease-out both fade-in;
+}
+
+.animate-draw {
+  animation: draw-x 1.1s var(--ease-out-expo) both;
+}
+
+.animate-grow {
+  transform-origin: bottom;
+  animation: grow-y 0.9s var(--ease-out-expo) both;
+}
+
+.animate-pop {
+  animation: pop 0.26s var(--ease-out-expo) both;
+}
+
+/* Enter animations used by the storefront (animate-in + fade-in / zoom-in / slide-in-from-*),
+   the same composable pattern as tailwindcss-animate without the extra dependency. */
+@keyframes enter {
+  from {
+    opacity: var(--enter-opacity, 1);
+    transform: translate3d(var(--enter-x, 0), var(--enter-y, 0), 0) scale(var(--enter-scale, 1));
+  }
+}
+
+.animate-in {
+  animation: enter 0.2s ease-out both;
+}
+
+.fade-in {
+  --enter-opacity: 0;
+}
+
+.zoom-in {
+  --enter-scale: 0.95;
+}
+
+.zoom-in-95 {
+  --enter-scale: 0.95;
+}
+
+.slide-in-from-top-2 {
+  --enter-y: -0.5rem;
+}
+
+.slide-in-from-bottom-2 {
+  --enter-y: 0.5rem;
+}
+
+.slide-in-from-left {
+  --enter-x: -100%;
+}
+
+.slide-in-from-right {
+  --enter-x: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Height of the sticky store header (h-16 / sm:h-20, plus its 1px border). */
+:root {
+  --site-header-h: 65px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --site-header-h: 81px;
+  }
+}
+
+/* The home page's first screen: the hero banner and the brand strip under it fill the window
+   below the header exactly, so the strip is the last thing in view. Spacing and type in the
+   hero shrink with the window's height; a window too short even for that lets it grow
+   rather than cutting anything off. */
+.first-screen {
+  min-height: calc(100svh - var(--site-header-h));
+}
+
+/* Brand strip: two identical copies of the list slide left by one copy's width and repeat,
+   so the loop has no seam. It cannot be scrolled; hovering pauses it. The store owner wants
+   it moving for everyone, so it keeps moving (slowly) with reduced motion too. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee var(--marquee-duration, 40s) linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* Hero slide timer: the bar of the slide on show fills up, and the next slide comes when it
+   is full (so pausing the bar pauses the slideshow too). */
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.hero-progress {
+  transform-origin: left;
+  animation: hero-progress var(--hero-slide-ms, 6000ms) linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* These two are timers rather than decoration: keep their real speed. */
+  .marquee-track {
+    animation-duration: var(--marquee-duration, 40s) !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .hero-progress {
+    animation-duration: var(--hero-slide-ms, 6000ms) !important;
+  }
+}
+
+/* ==========================================================================
+   Clean Dedicated Receipt Print Styles - Strictly Single Page
+   When printing, hides header, footer, page background, and all storefront chrome;
+   targets exclusively #printable-receipt fitting strictly on 1 single page.
+   ========================================================================== */
+/* Room below the footer for the product page's fixed purchase bar (phones only, like the bar). */
+@media (max-width: 767.98px) {
+  body:has([data-sticky-purchase-bar]) {
+    padding-bottom: 4.5rem;
+  }
+}
+
+@media print {
+  @page {
+    margin: 8mm;
+    size: portrait;
+  }
+
+  html,
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* The receipt page: a long receipt carries on to the next sheet instead of being cut off. */
+  html:has(#printable-receipt),
+  html:has(#printable-receipt) body {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Hide headers, footers, navigation, buttons, and actions */
+  header,
+  footer,
+  nav,
+  aside,
+  button,
+  a,
+  .no-print,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Make receipt card and its children visible */
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible !important;
+  }
+
+  /* Position receipt isolated at top of the single printed page */
+  #printable-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    padding: 16px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #D4D4D4 !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+}
+
+
+/*
+ * Long pages: sections below the first screen are rendered when they come near the viewport
+ * instead of all at once, which makes the first paint noticeably faster on phones.
+ * The size is a placeholder until the real height is known (the browser then remembers it).
+ */
+.below-fold > * {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
+}
+
+/* Phones and tablets: 16px form text, so iOS does not zoom the page in when a field is tapped. */
+@media (max-width: 1023px), (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/*
+ * Admin tables that do not fit their space (see Table in components/admin/ui.tsx): each row
+ * becomes a card, with the column name (data-label) beside every value.
+ */
+.admin-table[data-stacked] table {
+  display: block;
+  min-width: 0 !important;
+}
+.admin-table[data-stacked] thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.admin-table[data-stacked] tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 8px;
+  padding: 8px;
+}
+.admin-table[data-stacked] tbody tr {
+  display: block;
+  min-width: 0;
+  border: 0.8px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 2px 12px;
+}
+.admin-table[data-stacked] table td {
+  display: block;
+  max-width: none;
+  border: 0;
+  padding: 7px 0;
+  text-align: right;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.admin-table[data-stacked] table td + td {
+  border-top: 0.8px solid #f3f4f6;
+}
+.admin-table[data-stacked] td::before {
+  content: attr(data-label);
+  float: left;
+  margin-right: 12px;
+  /* The label keeps the plain table font, whatever the value uses (bold, code, small). */
+  font-family: theme('fontFamily.sans');
+  font-size: 13px;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: normal;
+  color: #6b7280;
+  text-align: left;
+}
+.admin-table[data-stacked] td::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+/* The first cell is the card's title; unlabelled cells (actions, expanded details) span the card. */
+.admin-table[data-stacked] table td:first-child,
+.admin-table[data-stacked] table td[data-label=''] {
+  text-align: left;
+}
+.admin-table[data-stacked] td:first-child::before,
+.admin-table[data-stacked] td[data-label='']::before {
+  content: none;
+}
+.admin-table[data-stacked] table td:empty {
+  display: none;
+}
+
+/* In a card, a value with its own width limit (a long email, a truncated title) still lines up on
+   the right under the other values instead of drifting to the middle of the row. */
+.admin-table[data-stacked] table td:not(:first-child):not([data-label='']) > [class*='max-w-'] {
+  margin-left: auto;
+}
+
+/* On a phone product page the "added to cart" notice sits above the fixed purchase bar, not on
+   top of its buttons (the bar is hidden while the page's own Add to Cart is on screen). */
+@media (max-width: 767.98px) {
+  body:has([data-sticky-purchase-bar]:not([data-off-screen])) [data-toast] {
+    bottom: 5.25rem;
+  }
+}

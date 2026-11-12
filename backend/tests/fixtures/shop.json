@@ -1,0 +1,27 @@
+{
+  "name": "SHOP.CO",
+  "tagline": "Clothes that suit your style and that you're proud to wear, delivered across Nigeria.",
+  "theme": {
+    "accent": "#000000",
+    "accentInk": "#ffffff"
+  },
+  "option1": {
+    "label": "Size",
+    "none": "Standard",
+    "choices": ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL", "28", "30", "32", "34", "36", "38", "40", "One Size"]
+  },
+  "option2": {
+    "label": "Colour",
+    "none": "Default",
+    "swatch": true
+  },
+  "features": {
+    "warranty": false,
+    "heavyDelivery": false,
+    "ageCheck": false
+  },
+  "ageCheck": {
+    "minAge": 18,
+    "categories": []
+  }
+}

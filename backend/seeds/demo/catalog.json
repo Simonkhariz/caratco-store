@@ -1,0 +1,1463 @@
+{
+  "settings": {
+    "store_name": "CARAT.CO",
+    "store_contact_email": "hello@caratco.example",
+    "store_contact_phone": "+2348000000105",
+    "store_origin_address": "5 Karimu Kotun Street, Victoria Island",
+    "store_origin_city": "Lagos",
+    "store_origin_state": "Lagos",
+    "default_product_rating": "4.7",
+    "storefront_brands": ""
+  },
+  "zones": [
+    {
+      "name": "Lagos",
+      "states": [
+        "Lagos"
+      ],
+      "fee": 2500,
+      "estimated_days": "1 to 2 days",
+      "items_included": 3,
+      "extra_item_fee": 300,
+      "heavy_item_fee": 0
+    },
+    {
+      "name": "South West",
+      "states": [
+        "Ogun",
+        "Oyo",
+        "Osun",
+        "Ondo",
+        "Ekiti"
+      ],
+      "fee": 3500,
+      "estimated_days": "2 to 3 days",
+      "items_included": 3,
+      "extra_item_fee": 400,
+      "heavy_item_fee": 0
+    },
+    {
+      "name": "Abuja and Port Harcourt",
+      "states": [
+        "FCT",
+        "Rivers"
+      ],
+      "fee": 4500,
+      "estimated_days": "2 to 4 days",
+      "items_included": 3,
+      "extra_item_fee": 500,
+      "heavy_item_fee": 0
+    },
+    {
+      "name": "Rest of Nigeria",
+      "states": [
+        "*"
+      ],
+      "fee": 6000,
+      "estimated_days": "3 to 6 days",
+      "items_included": 3,
+      "extra_item_fee": 600,
+      "heavy_item_fee": 0
+    }
+  ],
+  "promotions": [
+    {
+      "code": "WELCOME10",
+      "type": "percentage",
+      "value": 10,
+      "min_order": 0,
+      "max_discount": 10000,
+      "description": "10% off your first order",
+      "show_on_homepage": true
+    },
+    {
+      "code": "SAVE5K",
+      "type": "fixed",
+      "value": 5000,
+      "min_order": 50000,
+      "max_discount": null,
+      "description": "₦5,000 off orders from ₦50,000",
+      "show_on_homepage": false
+    },
+    {
+      "code": "GIFTBOX15",
+      "type": "percentage",
+      "value": 15,
+      "min_order": 20000,
+      "max_discount": 15000,
+      "description": "15% off gift sets and gift pieces from ₦20,000",
+      "show_on_homepage": false
+    }
+  ],
+  "categories": [
+    {
+      "name": "Rings",
+      "slug": "rings",
+      "description": "Bands, stacking rings and stone rings in sizes 6 to 10.",
+      "image": "cat-rings.webp"
+    },
+    {
+      "name": "Necklaces",
+      "slug": "necklaces",
+      "description": "Chains, pearls and pendants for every neckline.",
+      "image": "cat-necklaces.webp"
+    },
+    {
+      "name": "Earrings",
+      "slug": "earrings",
+      "description": "Hoops, drops and studs, light enough for a full day.",
+      "image": "cat-earrings.webp"
+    },
+    {
+      "name": "Bracelets",
+      "slug": "bracelets",
+      "description": "Link bracelets and charm bracelets in two lengths.",
+      "image": "cat-bracelets.webp"
+    },
+    {
+      "name": "Watches",
+      "slug": "watches",
+      "description": "Steel watches in three case sizes, with quartz movements.",
+      "image": "cat-watches.webp"
+    },
+    {
+      "name": "Sets",
+      "slug": "sets",
+      "description": "Matching pieces boxed together, ready to give.",
+      "image": "cat-sets.webp"
+    }
+  ],
+  "banners": [
+    {
+      "title": "JEWELLERY FOR EVERY DAY",
+      "subtitle": "Plated steel and sterling silver pieces you can wear daily. Rings, chains and hoops from ₦4,500.",
+      "cta_text": "Shop rings",
+      "cta_url": "/category?cat=rings",
+      "image": "banner-1.webp"
+    },
+    {
+      "title": "PEARLS AND STONES FOR BRIDES",
+      "subtitle": "Freshwater pearls and cubic zirconia, matched into sets for the big day and the bridal party.",
+      "cta_text": "Shop sets",
+      "cta_url": "/category?cat=sets",
+      "image": "banner-2.webp"
+    },
+    {
+      "title": "WATCHES FROM ₦28,000",
+      "subtitle": "Steel cases in 36mm, 40mm and 42mm. Quartz movements, easy to wear and easy to service.",
+      "cta_text": "Shop watches",
+      "cta_url": "/category?cat=watches",
+      "image": "banner-3.webp"
+    }
+  ],
+  "products": [
+    {
+      "name": "Halo Stack Ring",
+      "slug": "halo-stack-ring",
+      "category": "rings",
+      "description": "A thin sterling silver band set with a ring of small cubic zirconia stones. It sits well next to other rings and does not catch on sleeves.",
+      "price": 14500,
+      "original_price": null,
+      "style": "Everyday",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": null,
+      "units_sold": 58,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "925 sterling silver"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated or rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Cubic zirconia"
+        },
+        {
+          "name": "Care",
+          "value": "Keep dry and store in the pouch"
+        }
+      ],
+      "images": [
+        "p-halo-stack-ring-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "7",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 14
+        },
+        {
+          "option1": "8",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 18
+        },
+        {
+          "option1": "9",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 15500,
+          "stock": 9
+        },
+        {
+          "option1": "7",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 12
+        },
+        {
+          "option1": "8",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "name": "Plain Band Ring",
+      "slug": "plain-band-ring",
+      "category": "rings",
+      "description": "A smooth, narrow band in stainless steel with gold plating. It suits daily wear and goes with every other piece in the shop.",
+      "price": 6500,
+      "original_price": null,
+      "style": "Everyday",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": null,
+      "units_sold": 142,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated"
+        },
+        {
+          "name": "Stone",
+          "value": "None"
+        },
+        {
+          "name": "Care",
+          "value": "Wipe with a soft cloth after wear"
+        }
+      ],
+      "images": [
+        "p-plain-band-ring-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "6",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 30
+        },
+        {
+          "option1": "7",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 40
+        },
+        {
+          "option1": "8",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 36
+        },
+        {
+          "option1": "9",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 22
+        },
+        {
+          "option1": "10",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 3
+        }
+      ]
+    },
+    {
+      "name": "Solitaire Bridal Ring",
+      "slug": "solitaire-bridal-ring",
+      "category": "rings",
+      "description": "A sterling silver ring with one large cubic zirconia stone in a six claw setting. It looks like a classic engagement ring and costs a fraction of one. The stone is not a diamond.",
+      "price": 38000,
+      "original_price": null,
+      "style": "Bridal",
+      "featured": true,
+      "flash_deal": false,
+      "rating_start": 4.8,
+      "units_sold": 77,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "925 sterling silver"
+        },
+        {
+          "name": "Plating",
+          "value": "Rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Cubic zirconia, 1 carat look"
+        },
+        {
+          "name": "Care",
+          "value": "Keep away from perfume and water"
+        }
+      ],
+      "images": [
+        "p-solitaire-bridal-ring-1.webp",
+        "p-solitaire-bridal-ring-2.webp"
+      ],
+      "variants": [
+        {
+          "option1": "6",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 10
+        },
+        {
+          "option1": "7",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 16
+        },
+        {
+          "option1": "8",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 39500,
+          "stock": 11
+        }
+      ]
+    },
+    {
+      "name": "Cocktail Stone Ring",
+      "slug": "cocktail-stone-ring",
+      "category": "rings",
+      "description": "A wide ring with a large oval green glass stone and a plated steel setting. Wear it alone with a plain outfit.",
+      "price": 18500,
+      "original_price": 22000,
+      "style": "Statement",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": null,
+      "units_sold": 31,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Green glass"
+        },
+        {
+          "name": "Care",
+          "value": "Store flat, away from other rings"
+        }
+      ],
+      "images": [
+        "p-cocktail-stone-ring-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "7",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 8
+        },
+        {
+          "option1": "8",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 11
+        },
+        {
+          "option1": "7",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": null,
+          "stock": 6
+        },
+        {
+          "option1": "8",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": null,
+          "stock": 7
+        }
+      ]
+    },
+    {
+      "name": "Paperclip Chain Necklace",
+      "slug": "paperclip-chain-necklace",
+      "category": "necklaces",
+      "description": "A flat oval link chain in stainless steel. Wear it on its own or layered with a pendant. The 20 inch length sits below the collarbone.",
+      "price": 12000,
+      "original_price": 16000,
+      "style": "Everyday",
+      "featured": false,
+      "flash_deal": true,
+      "rating_start": null,
+      "units_sold": 119,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated"
+        },
+        {
+          "name": "Stone",
+          "value": "None"
+        },
+        {
+          "name": "Care",
+          "value": "Wipe dry after wear"
+        }
+      ],
+      "images": [
+        "p-paperclip-chain-necklace-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "16 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 25
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 31
+        },
+        {
+          "option1": "20 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 14500,
+          "stock": 19
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 14
+        }
+      ]
+    },
+    {
+      "name": "Freshwater Pearl Strand",
+      "slug": "pearl-strand-necklace",
+      "category": "necklaces",
+      "description": "Real freshwater pearls, knotted between each bead on silk thread. Each strand is slightly different in shape and shine, as natural pearls are.",
+      "price": 34000,
+      "original_price": null,
+      "style": "Bridal",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": 4.8,
+      "units_sold": 44,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Freshwater pearls, 925 sterling silver clasp"
+        },
+        {
+          "name": "Plating",
+          "value": "Clasp 18k gold plated or rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Freshwater pearl, 7mm"
+        },
+        {
+          "name": "Care",
+          "value": "Put on after perfume, store flat"
+        }
+      ],
+      "images": [
+        "p-pearl-strand-necklace-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "16 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 9
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 36500,
+          "stock": 12
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 36500,
+          "stock": 8
+        }
+      ]
+    },
+    {
+      "name": "Heart Locket Necklace",
+      "slug": "heart-locket-necklace",
+      "category": "necklaces",
+      "description": "A small heart locket on a fine chain. It opens to hold two tiny photos or a folded note. A thoughtful gift for a birthday or an anniversary.",
+      "price": 16500,
+      "original_price": null,
+      "style": "Gifts",
+      "featured": true,
+      "flash_deal": false,
+      "rating_start": 4.7,
+      "units_sold": 96,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated"
+        },
+        {
+          "name": "Stone",
+          "value": "None"
+        },
+        {
+          "name": "Care",
+          "value": "Keep dry, do not wear in the shower"
+        }
+      ],
+      "images": [
+        "p-heart-locket-necklace-1.webp",
+        "p-heart-locket-necklace-2.webp"
+      ],
+      "variants": [
+        {
+          "option1": "16 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 20
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 26
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 17
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": null,
+          "stock": 13
+        }
+      ]
+    },
+    {
+      "name": "Tennis Collar Necklace",
+      "slug": "tennis-collar-necklace",
+      "category": "necklaces",
+      "description": "A row of matched cubic zirconia stones set in sterling silver. It lies close to the neck and catches the light. The stones are not diamonds.",
+      "price": 55000,
+      "original_price": null,
+      "style": "Statement",
+      "featured": true,
+      "flash_deal": false,
+      "rating_start": 4.9,
+      "units_sold": 38,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "925 sterling silver"
+        },
+        {
+          "name": "Plating",
+          "value": "Rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Cubic zirconia, 3mm"
+        },
+        {
+          "name": "Care",
+          "value": "Store in the box, away from damp"
+        }
+      ],
+      "images": [
+        "p-tennis-collar-necklace-1.webp",
+        "p-tennis-collar-necklace-2.webp"
+      ],
+      "variants": [
+        {
+          "option1": "16 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 7
+        },
+        {
+          "option1": "18 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 58000,
+          "stock": 5
+        },
+        {
+          "option1": "16 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 58000,
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "name": "Small Hoop Earrings",
+      "slug": "small-hoops",
+      "category": "earrings",
+      "description": "Thin hoops about 20mm across, light enough to sleep in. Stainless steel posts that most sensitive ears can wear.",
+      "price": 5500,
+      "original_price": 7500,
+      "style": "Everyday",
+      "featured": false,
+      "flash_deal": true,
+      "rating_start": null,
+      "units_sold": 164,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated"
+        },
+        {
+          "name": "Stone",
+          "value": "None"
+        },
+        {
+          "name": "Care",
+          "value": "Wipe dry after wear"
+        }
+      ],
+      "images": [
+        "p-small-hoops-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 50
+        },
+        {
+          "option1": "",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 44
+        },
+        {
+          "option1": "",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": null,
+          "stock": 28
+        }
+      ]
+    },
+    {
+      "name": "Pearl Drop Earrings",
+      "slug": "pearl-drop-earrings",
+      "category": "earrings",
+      "description": "A single freshwater pearl hangs from a sterling silver stud. Simple enough for church and for the registry office.",
+      "price": 14000,
+      "original_price": 17500,
+      "style": "Bridal",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": null,
+      "units_sold": 63,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "925 sterling silver"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated or rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Freshwater pearl, 8mm"
+        },
+        {
+          "name": "Care",
+          "value": "Keep away from perfume"
+        }
+      ],
+      "images": [
+        "p-pearl-drop-earrings-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 15
+        },
+        {
+          "option1": "",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 18
+        }
+      ]
+    },
+    {
+      "name": "Chandelier Earrings",
+      "slug": "chandelier-earrings",
+      "category": "earrings",
+      "description": "Long tiered earrings with cubic zirconia stones, about 7cm in length. Made to be seen at weddings and evening events. They are light on the ear.",
+      "price": 28000,
+      "original_price": null,
+      "style": "Statement",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": 4.4,
+      "units_sold": 22,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Brass with rhodium plating"
+        },
+        {
+          "name": "Plating",
+          "value": "Rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Cubic zirconia"
+        },
+        {
+          "name": "Care",
+          "value": "Store hanging or flat, not in a heap"
+        }
+      ],
+      "images": [
+        "p-chandelier-earrings-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "",
+          "option2": "",
+          "hex": "#000000",
+          "price": null,
+          "stock": 21
+        }
+      ]
+    },
+    {
+      "name": "Cuban Link Bracelet",
+      "slug": "cuban-link-bracelet",
+      "category": "bracelets",
+      "description": "A chunky curb chain bracelet in stainless steel with a lobster clasp. Heavy enough to feel solid, and tough enough for every day.",
+      "price": 15000,
+      "original_price": null,
+      "style": "Everyday",
+      "featured": true,
+      "flash_deal": false,
+      "rating_start": 4.7,
+      "units_sold": 110,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated"
+        },
+        {
+          "name": "Stone",
+          "value": "None"
+        },
+        {
+          "name": "Care",
+          "value": "Wipe with a soft cloth"
+        }
+      ],
+      "images": [
+        "p-cuban-link-bracelet-1.webp",
+        "p-cuban-link-bracelet-2.webp"
+      ],
+      "variants": [
+        {
+          "option1": "7 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 24
+        },
+        {
+          "option1": "8 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 16500,
+          "stock": 28
+        },
+        {
+          "option1": "8 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 16500,
+          "stock": 0
+        }
+      ]
+    },
+    {
+      "name": "Tennis Bracelet",
+      "slug": "tennis-bracelet",
+      "category": "bracelets",
+      "description": "A line of cubic zirconia stones in sterling silver with a double safety clasp. A bridesmaid gift that gets worn long after the wedding.",
+      "price": 42000,
+      "original_price": null,
+      "style": "Bridal",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": 4.8,
+      "units_sold": 49,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "925 sterling silver"
+        },
+        {
+          "name": "Plating",
+          "value": "Rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Cubic zirconia, 3mm"
+        },
+        {
+          "name": "Care",
+          "value": "Store in the box"
+        }
+      ],
+      "images": [
+        "p-tennis-bracelet-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "7 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 11
+        },
+        {
+          "option1": "8 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 44000,
+          "stock": 8
+        },
+        {
+          "option1": "7 inch",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": 44000,
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "name": "Charm Bracelet",
+      "slug": "charm-bracelet",
+      "category": "bracelets",
+      "description": "A sterling silver chain bracelet with five small charms, a heart, a star, a key, a moon and a letter tag. A good first gift for a daughter or a friend.",
+      "price": 9000,
+      "original_price": 11500,
+      "style": "Gifts",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": null,
+      "units_sold": 72,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "925 sterling silver"
+        },
+        {
+          "name": "Plating",
+          "value": "Rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "None"
+        },
+        {
+          "name": "Care",
+          "value": "Keep dry and store in the pouch"
+        }
+      ],
+      "images": [
+        "p-charm-bracelet-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "7 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 26
+        },
+        {
+          "option1": "8 inch",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 20
+        },
+        {
+          "option1": "7 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 9500,
+          "stock": 15
+        },
+        {
+          "option1": "8 inch",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 9500,
+          "stock": 12
+        }
+      ]
+    },
+    {
+      "name": "Slim Dress Watch",
+      "slug": "slim-dress-watch",
+      "category": "watches",
+      "description": "A thin steel watch with a plain white dial and a leather strap. The case is only 7mm deep, so it slides under a cuff.",
+      "price": 45000,
+      "original_price": null,
+      "style": "Everyday",
+      "featured": true,
+      "flash_deal": false,
+      "rating_start": 4.7,
+      "units_sold": 83,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel case, leather strap"
+        },
+        {
+          "name": "Movement",
+          "value": "Quartz"
+        },
+        {
+          "name": "Water resistance",
+          "value": "3 ATM, splash proof"
+        },
+        {
+          "name": "Care",
+          "value": "Do not swim or shower with it"
+        }
+      ],
+      "images": [
+        "p-slim-dress-watch-1.webp",
+        "p-slim-dress-watch-2.webp"
+      ],
+      "variants": [
+        {
+          "option1": "36mm",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": null,
+          "stock": 10
+        },
+        {
+          "option1": "40mm",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": 47000,
+          "stock": 13
+        },
+        {
+          "option1": "40mm",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 47000,
+          "stock": 15
+        },
+        {
+          "option1": "40mm",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 47000,
+          "stock": 9
+        }
+      ]
+    },
+    {
+      "name": "Steel Chronograph Watch",
+      "slug": "steel-chronograph-watch",
+      "category": "watches",
+      "description": "A 42mm steel watch with three working sub dials and a date window. The bracelet is solid steel links with a folding clasp.",
+      "price": 98000,
+      "original_price": 120000,
+      "style": "Statement",
+      "featured": false,
+      "flash_deal": true,
+      "rating_start": null,
+      "units_sold": 36,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel case and bracelet"
+        },
+        {
+          "name": "Movement",
+          "value": "Quartz"
+        },
+        {
+          "name": "Water resistance",
+          "value": "5 ATM, safe for rain and handwashing"
+        },
+        {
+          "name": "Glass",
+          "value": "Mineral glass"
+        },
+        {
+          "name": "Care",
+          "value": "Rinse with fresh water if splashed"
+        }
+      ],
+      "images": [
+        "p-steel-chronograph-watch-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "42mm",
+          "option2": "Black",
+          "hex": "#1C1C1C",
+          "price": null,
+          "stock": 8
+        },
+        {
+          "option1": "42mm",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 12
+        },
+        {
+          "option1": "40mm",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 94000,
+          "stock": 4
+        }
+      ]
+    },
+    {
+      "name": "Mesh Strap Watch",
+      "slug": "mesh-strap-watch",
+      "category": "watches",
+      "description": "A small round watch on a woven mesh strap that adjusts with a slide clasp, so it fits most wrists without tools. Gold plated steel case.",
+      "price": 28000,
+      "original_price": 34000,
+      "style": "Gifts",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": null,
+      "units_sold": 128,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel case and mesh strap"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated or steel finish"
+        },
+        {
+          "name": "Movement",
+          "value": "Quartz"
+        },
+        {
+          "name": "Water resistance",
+          "value": "3 ATM, splash proof"
+        }
+      ],
+      "images": [
+        "p-mesh-strap-watch-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "36mm",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 22
+        },
+        {
+          "option1": "36mm",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 19
+        },
+        {
+          "option1": "40mm",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 30000,
+          "stock": 14
+        },
+        {
+          "option1": "40mm",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": 30000,
+          "stock": 16
+        }
+      ]
+    },
+    {
+      "name": "Two Tone Steel Watch",
+      "slug": "two-tone-steel-watch",
+      "category": "watches",
+      "description": "A 40mm or 42mm steel watch with a gold coloured bezel and a steel and gold link bracelet. Day and date display, and a clear sapphire coated glass.",
+      "price": 142000,
+      "original_price": null,
+      "style": "Statement",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": 4.6,
+      "units_sold": 17,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel case and bracelet"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated bezel and centre links"
+        },
+        {
+          "name": "Movement",
+          "value": "Quartz"
+        },
+        {
+          "name": "Water resistance",
+          "value": "5 ATM, safe for rain and handwashing"
+        },
+        {
+          "name": "Care",
+          "value": "Wipe dry and keep away from magnets"
+        }
+      ],
+      "images": [
+        "p-two-tone-steel-watch-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "40mm",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 5
+        },
+        {
+          "option1": "42mm",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": 148000,
+          "stock": 7
+        },
+        {
+          "option1": "42mm",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": 148000,
+          "stock": 6
+        }
+      ]
+    },
+    {
+      "name": "Bridal Pearl Set",
+      "slug": "bridal-pearl-set",
+      "category": "sets",
+      "description": "A short pearl necklace and matching drop earrings, boxed together. Freshwater pearls on sterling silver fittings. Orders of four or more sets for a bridal party can be arranged by message.",
+      "price": 68000,
+      "original_price": null,
+      "style": "Bridal",
+      "featured": true,
+      "flash_deal": false,
+      "rating_start": 4.9,
+      "units_sold": 41,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Freshwater pearls, 925 sterling silver"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated or rhodium plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Freshwater pearl"
+        },
+        {
+          "name": "Care",
+          "value": "Put on after perfume, store in the box"
+        }
+      ],
+      "images": [
+        "p-bridal-pearl-set-1.webp",
+        "p-bridal-pearl-set-2.webp"
+      ],
+      "variants": [
+        {
+          "option1": "",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 10
+        },
+        {
+          "option1": "",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 12
+        }
+      ]
+    },
+    {
+      "name": "Gift Box Pendant Set",
+      "slug": "gift-box-pendant-set",
+      "category": "sets",
+      "description": "A heart pendant on a chain, matching stud earrings and a gift box with a ribbon. Everything needed for a birthday present is in one box.",
+      "price": 25000,
+      "original_price": null,
+      "style": "Gifts",
+      "featured": false,
+      "flash_deal": false,
+      "rating_start": null,
+      "units_sold": 88,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        {
+          "name": "Material",
+          "value": "Stainless steel"
+        },
+        {
+          "name": "Plating",
+          "value": "18k gold plated"
+        },
+        {
+          "name": "Stone",
+          "value": "Cubic zirconia"
+        },
+        {
+          "name": "Care",
+          "value": "Keep dry and store in the box"
+        }
+      ],
+      "images": [
+        "p-gift-box-pendant-set-1.webp"
+      ],
+      "variants": [
+        {
+          "option1": "",
+          "option2": "Gold",
+          "hex": "#D4AF37",
+          "price": null,
+          "stock": 22
+        },
+        {
+          "option1": "",
+          "option2": "Silver",
+          "hex": "#C0C0C0",
+          "price": null,
+          "stock": 18
+        },
+        {
+          "option1": "",
+          "option2": "Rose Gold",
+          "hex": "#B76E79",
+          "price": null,
+          "stock": 11
+        }
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "product": "plain-band-ring",
+      "name": "Amaka E.",
+      "rating": 5,
+      "title": "Wear it daily",
+      "body": "Bought size 7 and it fits well. Three weeks of daily wear and no marks so far."
+    },
+    {
+      "product": "solitaire-bridal-ring",
+      "name": "Tunde B.",
+      "rating": 5,
+      "title": "She said yes",
+      "body": "Proposed with this one. It looks great and nobody knew it was not a diamond. Arrived in two days to Ibadan."
+    },
+    {
+      "product": "paperclip-chain-necklace",
+      "name": "Zainab M.",
+      "rating": 4,
+      "title": "Good chain",
+      "body": "Nice weight and the clasp is firm. I wanted the 18 inch and it sits just right."
+    },
+    {
+      "product": "heart-locket-necklace",
+      "name": "Ngozi A.",
+      "rating": 5,
+      "title": "Mum loved it",
+      "body": "Put her photo and mine inside. The locket closes tightly. The box was neat too."
+    },
+    {
+      "product": "small-hoops",
+      "name": "Folake S.",
+      "rating": 4,
+      "title": "Light and neat",
+      "body": "Very light. Sleeping in them is fine. They look a bit thinner in real life than in the picture."
+    },
+    {
+      "product": "cuban-link-bracelet",
+      "name": "Emeka N.",
+      "rating": 5,
+      "title": "Solid bracelet",
+      "body": "Feels heavy and sturdy. Colour has not changed after a month, even with gym sessions."
+    },
+    {
+      "product": "slim-dress-watch",
+      "name": "Yusuf K.",
+      "rating": 4,
+      "title": "Clean look",
+      "body": "Slim and easy to wear to work. Strap was stiff for the first few days, then fine."
+    },
+    {
+      "product": "steel-chronograph-watch",
+      "name": "Chinedu O.",
+      "rating": 3,
+      "title": "Good but large",
+      "body": "Watch itself is good and the dials work. I ordered 42mm and it is bigger on my wrist than I thought. Try the 40mm."
+    },
+    {
+      "product": "bridal-pearl-set",
+      "name": "Blessing I.",
+      "rating": 5,
+      "title": "Wore it to my wedding",
+      "body": "The pearls are lovely and the earrings were light all day. Packed with care and arrived before my date."
+    },
+    {
+      "product": "gift-box-pendant-set",
+      "name": "Hauwa D.",
+      "rating": 5,
+      "title": "Easy gift",
+      "body": "Gave it to my sister for her birthday. The box looked good and she wore the studs straight away."
+    }
+  ]
+}

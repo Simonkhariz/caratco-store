@@ -1,0 +1,3 @@
+# Only backend/public is meant to be web-served. If Apache is ever pointed at
+# backend/ itself, refuse everything so .env, storage, tests and source stay private.
+Require all denied

@@ -1,0 +1,25 @@
+{
+  "name": "shopco/backend",
+  "description": "Shop.co E-Commerce PHP 8+ REST API Backend",
+  "type": "project",
+  "require": {
+    "php": ">=8.2",
+    "ext-mysqli": "*",
+    "ext-json": "*",
+    "ext-curl": "*",
+    "ext-mbstring": "*",
+    "ext-openssl": "*",
+    "ext-simplexml": "*",
+    "ext-ctype": "*"
+  },
+  "suggest": {
+    "ext-zlib": "scripts/backup.php compresses the database dump and pictures; API answers are gzipped",
+    "ext-phar": "scripts/backup.php archives the pictures",
+    "ext-opcache": "about twice as fast API answers (measured in the load test)"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/"
+    }
+  }
+}

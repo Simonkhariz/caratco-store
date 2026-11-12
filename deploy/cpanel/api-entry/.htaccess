@@ -1,0 +1,21 @@
+# Sends every request to index.php, as shopco-api/public/.htaccess does.
+Options -Indexes
+
+# This folder is usually inside the shop's web folder, whose Node.js settings would otherwise apply
+# here too and answer the API's address with the storefront.
+<IfModule mod_passenger.c>
+    PassengerEnabled off
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

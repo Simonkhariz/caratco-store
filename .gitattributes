@@ -1,0 +1,9 @@
+# Files that run on the Linux server keep Linux line endings on every machine.
+deploy/oracle/*.sh       text eol=lf
+deploy/oracle/*.conf     text eol=lf
+deploy/oracle/*.cron     text eol=lf
+deploy/oracle/*.service  text eol=lf
+
+# Not needed on a server: left out of the upload package (deploy/oracle/upload.ps1, git archive).
+design/   export-ignore
+workmds/  export-ignore

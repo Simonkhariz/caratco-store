@@ -1,0 +1,102 @@
+{
+  "key": "caratco",
+  "name": "CARAT.CO",
+  "kind": "online jewellery and watch store",
+  "title": "CARAT.CO | Jewellery and Watches for Every Day and Every Occasion",
+  "description": "Rings, necklaces, earrings, bracelets, watches and sets in gold, silver and rose gold finishes, delivered across Nigeria.",
+  "tagline": "Jewellery and watches for every day and every occasion, delivered across Nigeria.",
+  "hero": {
+    "title": "JEWELLERY YOU WILL WEAR EVERY DAY",
+    "subtitle": "Rings, necklaces, earrings, bracelets and watches in gold, silver and rose gold finishes. Gift ready and delivered to your door.",
+    "cta": "Shop Now",
+    "image": "/images/hero/hero.webp",
+    "cutout": false
+  },
+  "theme": {
+    "accent": "#0F3D3E",
+    "accentHover": "#185556",
+    "accentInk": "#ffffff",
+    "surface": "#EEF3F2",
+    "card": "#F4F1EA",
+    "hero": "#F3F0E8"
+  },
+  "option1": {
+    "label": "Size",
+    "plural": "Sizes",
+    "none": "Standard",
+    "choices": [
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "16 inch",
+      "18 inch",
+      "20 inch",
+      "7 inch",
+      "8 inch",
+      "36mm",
+      "40mm",
+      "42mm"
+    ],
+    "help": "Not sure of your ring size? Wrap a strip of paper around your finger, mark where it meets and measure it. 52mm is a size 6, 54mm a 7, 57mm an 8, 59mm a 9 and 62mm a 10."
+  },
+  "option2": {
+    "label": "Metal",
+    "plural": "Metals",
+    "none": "Default",
+    "swatch": true,
+    "placeholder": "e.g. Gold"
+  },
+  "style": {
+    "enabled": true,
+    "label": "Collection",
+    "plural": "Collections",
+    "short": "Collection",
+    "browseTitle": "SHOP BY COLLECTION",
+    "values": [
+      "Everyday",
+      "Bridal",
+      "Statement",
+      "Gifts"
+    ],
+    "images": {
+      "everyday": "/images/styles/everyday.webp",
+      "bridal": "/images/styles/bridal.webp",
+      "statement": "/images/styles/statement.webp",
+      "gifts": "/images/styles/gifts.webp"
+    }
+  },
+  "specs": {
+    "label": "Materials and care",
+    "suggested": [
+      "Material",
+      "Plating",
+      "Stone",
+      "Care"
+    ]
+  },
+  "features": {
+    "warranty": false,
+    "heavyDelivery": false,
+    "ageCheck": false
+  },
+  "ageCheck": {
+    "minAge": 18,
+    "categories": []
+  },
+  "wording": {
+    "featured": "FEATURED",
+    "newArrivals": "NEW ARRIVALS",
+    "topSelling": "TOP SELLING",
+    "categoriesEyebrow": "The Collection",
+    "categoriesTitle": "EXPLORE BY CATEGORY",
+    "categoriesCta": "Browse All Collections",
+    "emptyCart": "Explore our rings, necklaces and watches and find a piece you will wear every day.",
+    "contactIntro": "Questions about an order, a size or a return? Reach us using the details below.",
+    "searchExampleShort": "ring",
+    "searchExampleLong": "gold hoop earrings",
+    "descriptionHint": "Material, plating, stone, size, how to care for it…",
+    "categoryHint": "/category?cat=rings"
+  }
+}

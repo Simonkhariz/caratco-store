@@ -1,0 +1,50 @@
+# -----------------------------------------------------------------------------
+# Apache URL Rewriting for Shop.co PHP API
+# Directs all requests to index.php while preserving static files
+# -----------------------------------------------------------------------------
+
+# This folder is the only one meant to be public. backend/.htaccess one level up refuses
+# everything, and some servers (LiteSpeed on shared hosting) apply it here too unless this
+# folder allows access itself. Hidden files stay refused by the rule at the end.
+Require all granted
+
+# Prevent directory browsing (also when mod_rewrite is not loaded)
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Pass Authorization header to PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect all non-existent files and directories to index.php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Uploaded pictures (/uploads). Browsers and the storefront's image optimiser reuse what these
+# headers allow. Admin uploads get a new, unique name every time (prod_<date>_<time>_<random>),
+# so they never change and may be kept for a year; other pictures (catalogue photos with fixed
+# names) are kept for a day. Later rules win, so the specific one comes last.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpe?g|png|webp)$">
+        Header set Cache-Control "public, max-age=86400"
+        Header set X-Content-Type-Options "nosniff"
+    </FilesMatch>
+    <FilesMatch "^prod_[0-9]{8}_[0-9]{6}_[0-9a-f]{8}\.(jpe?g|png|webp)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+# Live payment status streams (/api/v1/checkout/orders/<n>/events) must reach the browser as
+# they are written: never compress them if the host adds mod_deflate.
+<IfModule mod_setenvif.c>
+    SetEnvIf Request_URI "/events$" no-gzip=1 dont-vary=1
+</IfModule>
+
+# Block hidden files (.env, .git)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

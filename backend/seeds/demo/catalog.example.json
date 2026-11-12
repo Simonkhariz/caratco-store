@@ -1,0 +1,45 @@
+{
+  "settings": {
+    "store_contact_email": "hello@example.com",
+    "default_product_rating": "4.5"
+  },
+  "zones": [
+    { "name": "Lagos", "states": ["Lagos"], "fee": 2500, "estimated_days": "1 to 2 days", "items_included": 3, "extra_item_fee": 300, "heavy_item_fee": 0 },
+    { "name": "Rest of Nigeria", "states": ["*"], "fee": 5000, "estimated_days": "3 to 6 days" }
+  ],
+  "promotions": [
+    { "code": "WELCOME10", "type": "percentage", "value": 10, "min_order": 0, "max_discount": null, "description": "10% off your first order", "show_on_homepage": true }
+  ],
+  "categories": [
+    { "name": "Everyday", "slug": "everyday", "description": "Things you reach for every day." }
+  ],
+  "banners": [],
+  "products": [
+    {
+      "name": "Example Product",
+      "slug": "example-product",
+      "category": "everyday",
+      "description": "A short description of the product.",
+      "price": 12000,
+      "original_price": 15000,
+      "style": "",
+      "featured": true,
+      "flash_deal": false,
+      "rating_start": 4.6,
+      "units_sold": 0,
+      "warranty": null,
+      "heavy": false,
+      "specifications": [
+        { "name": "Made in", "value": "Nigeria" }
+      ],
+      "images": [],
+      "variants": [
+        { "option1": "M", "option2": "Black", "hex": "#000000", "price": null, "stock": 20 },
+        { "option1": "L", "option2": "Black", "hex": "#000000", "price": 13000, "stock": 10 }
+      ]
+    }
+  ],
+  "reviews": [
+    { "product": "example-product", "name": "Ada O.", "rating": 5, "title": "Just right", "body": "Arrived quickly and exactly as described." }
+  ]
+}
