@@ -144,15 +144,9 @@ export function CatalogClient({ seed }: { seed: CatalogSeed }) {
       : filters.searchQuery.trim()
         ? `Results for “${filters.searchQuery.trim()}”`
         : activeStyle
-          ? (
-            // The shop's own heading for a style ("{value} style"). The headings here are shown
-            // with capital first letters; the style's name keeps its own spelling.
-            <>
-              {styleBefore}
-              <span className="normal-case">{activeStyle}</span>
-              {styleAfter}
-            </>
-          )
+          ? // The shop's own heading for a style ("{value} style"), as one piece of text, so the page
+            // title (all capitals) and the page trail (capital first letters) each show it whole.
+            `${styleBefore}${activeStyle}${styleAfter}`
           : filters.flashDeals
             ? 'Flash deals'
             : filters.featured
