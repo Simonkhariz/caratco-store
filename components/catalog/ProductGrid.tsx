@@ -18,7 +18,9 @@ import {
 interface ProductGridProps {
   products: Product[];
   totalCount: number;
-  categoryTitle: string;
+  categoryTitle: React.ReactNode;
+  /** The chosen style as the shop wrote it (the filters hold the address form, in lower case). */
+  styleLabel?: string | null;
   filters: FilterState;
   onFilterChange: (newFilters: Partial<FilterState>) => void;
   onReset: () => void;
@@ -61,6 +63,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   totalCount,
   categoryTitle,
+  styleLabel,
   filters,
   onFilterChange,
   onReset,
@@ -134,7 +137,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           {filters.category && <Chip label={filters.category.replace(/-/g, ' ')} onRemove={() => onFilterChange({ category: null })} />}
           {/* The shop's own names for the style filter and the two options. The filters arrive
               without a switched-off style or a "none" value (shopFilters in lib/shop.ts). */}
-          {filters.dressStyle && <Chip label={`${SHOP.style.short}: ${filters.dressStyle}`} onRemove={() => onFilterChange({ dressStyle: null })} />}
+          {filters.dressStyle && <Chip label={`${SHOP.style.short}: ${styleLabel || filters.dressStyle}`} onRemove={() => onFilterChange({ dressStyle: null })} />}
           {filters.selectedColors.map((color) => (
             <Chip key={color} label={`${SHOP.option2.label}: ${color}`} onRemove={() => onFilterChange({ selectedColors: filters.selectedColors.filter((c) => c !== color) })} />
           ))}
@@ -199,7 +202,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
           <p className="text-sm text-neutral-700 max-w-sm mx-auto mb-6">
             {totalPages === 1 ? 'These products fit on one page.' : `These products end on page ${totalPages}.`}
           </p>
-          <button type="button" onClick={() => onPageChange(totalPages)} className="bg-accent text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover">
+          <button type="button" onClick={() => onPageChange(totalPages)} className="bg-accent text-accent-ink px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover">
             Go to the last page
           </button>
         </div>
@@ -222,7 +225,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
               <button
                 type="button"
                 onClick={() => onFilterChange({ ...searchOnlyFilters, searchQuery: filters.searchQuery })}
-                className="bg-accent text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover"
+                className="bg-accent text-accent-ink px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover"
               >
                 Search without filters
               </button>
@@ -233,7 +236,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
               className={
                 otherFiltersActive
                   ? 'border border-neutral-300 text-black px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-neutral-100'
-                  : 'bg-accent text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover'
+                  : 'bg-accent text-accent-ink px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover'
               }
             >
               Browse all products
@@ -249,7 +252,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
             {active ? 'Try removing a filter or widening the price range.' : 'There are no products to show yet.'}
           </p>
           {active && (
-            <button type="button" onClick={onReset} className="bg-accent text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover">
+            <button type="button" onClick={onReset} className="bg-accent text-accent-ink px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-accent-hover">
               Clear all filters
             </button>
           )}
@@ -281,7 +284,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
                     aria-current={item === currentPage ? 'page' : undefined}
                     aria-label={`Page ${item}`}
                     className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center ${
-                      item === currentPage ? 'bg-accent text-white' : 'text-neutral-700 hover:bg-neutral-100'
+                      item === currentPage ? 'bg-accent text-accent-ink' : 'text-neutral-700 hover:bg-neutral-100'
                     }`}
                   >
                     {item}

@@ -369,30 +369,28 @@ final class CatalogSeeder
                 'specifications' => $product['specifications'] ?? [],
                 'warranty' => $product['warranty'] ?? null,
                 'is_heavy' => !empty($product['heavy']),
+                // For adults only whatever its category (a shop with the age check on asks for the confirmation).
+                'is_age_restricted' => !empty($product['age_restricted']),
+                // Only for a product without "variants": what its one plain variant has in stock.
+                // Nothing is in stock unless the file says so.
+                'stock_quantity' => $product['stock'] ?? 0,
             ];
-            // SKUs the way the admin makes them: from the category and the name, then one per variant.
+            // SKUs the way the admin makes them: from the category and the name. Each variant's
+            // SKU is made when it is saved (ProductRepository::uniqueVariantSku).
             do {
                 $data['sku'] = ProductRepository::generateSku($data);
             } while (isset($skus[$data['sku']]));
             $skus[$data['sku']] = true;
 
             $variants = [];
-            foreach ($this->rows($product['variants'] ?? [], "{$at}, variants") as $n => $variant) {
-                $row = [
+            foreach ($this->rows($product['variants'] ?? [], "{$at}, variants") as $variant) {
+                $variants[] = [
                     'size' => Input::text($variant['option1'] ?? null),
                     'color_name' => Input::text($variant['option2'] ?? null),
                     'color_hex' => Input::text($variant['hex'] ?? null),
                     'price_override' => $variant['price'] ?? null,
                     'stock_quantity' => $variant['stock'] ?? 0,
                 ];
-                $options = ProductRepository::variantOptions($row);
-                $sku = ProductRepository::generateVariantSku($data['sku'], $options['color_name'], $options['size'], $n + 1);
-                // "Eau de Parfum" and "Eau de Toilette" shorten to the same letters: keep each SKU its own.
-                for ($base = $sku, $copy = 2; isset($skus[$sku]); $copy++) {
-                    $sku = "{$base}-{$copy}";
-                }
-                $skus[$sku] = true;
-                $variants[] = $row + ['sku' => $sku];
             }
 
             $images = [];
@@ -601,7 +599,8 @@ final class CatalogSeeder
 
             $id = $repository->create($data, $product['variants'], $product['images']);
             if ($product['units_sold'] > 0) {
-                $db->execute("UPDATE `products` SET `units_sold` = ? WHERE `id` = ?", 'ii', [$product['units_sold'], $id]);
+                // A starting figure: real sales are added to it (App\Services\ProductSales), never put in its place.
+                $db->execute("UPDATE `products` SET `units_sold_start` = ?, `units_sold` = ? WHERE `id` = ?", 'iii', [$product['units_sold'], $product['units_sold'], $id]);
             }
             $productIds[$data['slug']] = $id;
             $counts['products']++;

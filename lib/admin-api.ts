@@ -127,6 +127,8 @@ export interface AdminOrderPayment {
 export interface AdminOrderDetail extends Omit<AdminOrderListItem, 'payment_provider' | 'payment_reference' | 'payment_record_status' | 'carrier' | 'tracking_number' | 'tracking_url' | 'shipment_status' | 'shipped_at' | 'delivered_at' | 'items_count' | 'total_quantity'> {
   notes: string | null;
   applied_promo_code: string | null;
+  /** When the customer confirmed their age at checkout (orders with adult-only items); null otherwise. */
+  age_confirmed_at?: string | null;
   allowed_transitions: OrderStatus[];
   shipment: {
     id: number;
@@ -319,7 +321,9 @@ export interface AdminProductExtras {
   specifications?: ProductSpecification[] | null;
   warranty?: string | null;
   is_heavy?: boolean | number;
-  /** Worked out by the server from the product's category; read only. */
+  /** The product's own "adults only" flag, as ticked in the editor. */
+  is_age_restricted?: boolean | number;
+  /** Worked out by the server: that flag, or a category that is for adults only. Read only. */
   age_restricted?: boolean;
 }
 
@@ -330,6 +334,7 @@ export interface AdminProductExtrasPayload {
   /** '' clears it. */
   warranty?: string;
   is_heavy?: boolean;
+  is_age_restricted?: boolean;
 }
 
 export type AdminProductSave = AdminProductPayload & AdminProductExtrasPayload;

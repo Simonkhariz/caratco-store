@@ -10,3 +10,15 @@ import { SHOP } from '@/lib/shop';
 export const DRESS_STYLE_IMAGES: Record<string, string> = Object.fromEntries(
   Object.entries(SHOP.style.images ?? {}).map(([name, src]) => [name.trim().toLowerCase(), src])
 );
+
+/** Tile widths out of 12 columns, two tiles to a row: narrow and wide, then wide and narrow. */
+const TILE_SPANS = [4, 8, 8, 4] as const;
+
+/**
+ * How wide the tile at `index` is when there are `count` tiles. With an odd number the last
+ * tile would sit alone beside an empty space, so it takes the whole row.
+ */
+export function styleTileSpan(index: number, count: number): 4 | 8 | 12 {
+  if (count % 2 === 1 && index === count - 1) return 12;
+  return TILE_SPANS[index % TILE_SPANS.length];
+}

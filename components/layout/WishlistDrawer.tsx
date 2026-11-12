@@ -32,11 +32,11 @@ function AddToCartButton({ product, onClose }: { product: Product; onClose: () =
         onFocus={warm}
         disabled={busy}
         aria-busy={busy || undefined}
-        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-accent px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-70"
+        className="flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-accent px-3.5 py-2 text-xs font-semibold text-accent-ink transition-colors hover:bg-accent-hover disabled:opacity-70"
         aria-label={`Add ${product.name} to cart`}
       >
         {busy ? (
-          <span className="block h-[14px] w-[14px] animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
+          <span className="block h-[14px] w-[14px] animate-spin rounded-full border-2 border-[color-mix(in_srgb,var(--accent-ink)_30%,transparent)] border-t-accent-ink" aria-hidden="true" />
         ) : (
           <HugeiconsIcon icon={ShoppingBag01Icon} size={14} aria-hidden="true" />
         )}
@@ -145,7 +145,7 @@ export const WishlistDrawer: React.FC = () => {
             <Link
               href="/category"
               onClick={closeWishlist}
-              className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+              className="rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
             >
               Browse products
             </Link>

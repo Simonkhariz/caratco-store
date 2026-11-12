@@ -39,7 +39,13 @@
       "40mm",
       "42mm"
     ],
-    "help": "Not sure of your ring size? Wrap a strip of paper around your finger, mark where it meets and measure it. 52mm is a size 6, 54mm a 7, 57mm an 8, 59mm a 9 and 62mm a 10."
+    "help": "",
+    "helpByCategory": {
+      "rings": "Not sure of your ring size? Wrap a strip of paper around your finger, mark where it meets and measure it. 52mm is a size 6, 54mm a 7, 57mm an 8, 59mm a 9 and 62mm a 10.",
+      "necklaces": "Chain length is measured from end to end. 16 inch sits at the collarbone, 18 inch just below it and 20 inch on the chest.",
+      "bracelets": "Measure around your wrist and add about half an inch for a comfortable fit.",
+      "watches": "The size is the width of the watch case. 36mm suits a slimmer wrist, 40mm and 42mm a broader one."
+    }
   },
   "option2": {
     "label": "Metal",
@@ -53,6 +59,7 @@
     "label": "Collection",
     "plural": "Collections",
     "short": "Collection",
+    "heading": "{value} collection",
     "browseTitle": "SHOP BY COLLECTION",
     "values": [
       "Everyday",

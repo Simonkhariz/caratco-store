@@ -169,7 +169,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ banners = [], promotions
                     <Link
                       href={s.ctaUrl}
                       tabIndex={shown ? undefined : -1}
-                      className={`${activePromo ? 'shrink-0 px-6 sm:px-12' : 'w-full px-12'} rounded-full bg-accent py-3.5 text-center text-sm font-semibold text-white shadow-lg transition-all hover:bg-accent-hover active:scale-95 sm:w-auto sm:py-4 sm:text-base`}
+                      className={`${activePromo ? 'shrink-0 px-6 sm:px-12' : 'w-full px-12'} rounded-full bg-accent py-3.5 text-center text-sm font-semibold text-accent-ink shadow-lg transition-all hover:bg-accent-hover active:scale-95 sm:w-auto sm:py-4 sm:text-base`}
                     >
                       {s.ctaText}
                     </Link>

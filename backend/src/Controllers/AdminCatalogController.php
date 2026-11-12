@@ -17,6 +17,7 @@ use App\Support\ImageMetadata;
 use App\Support\RequestContext;
 use App\Support\Response;
 use App\Support\UploadFiles;
+use App\Support\ValidationFailed;
 use App\Validators\CategoryValidator;
 use App\Validators\ProductValidator;
 
@@ -84,22 +85,8 @@ class AdminCatalogController
             $body['sku'] = ProductRepository::generateSku($body);
         }
 
-        // Auto-generate variant SKUs if omitted
-        if (!empty($body['variants']) && is_array($body['variants'])) {
-            foreach ($body['variants'] as $idx => &$varItem) {
-                if (is_array($varItem) && empty($varItem['sku'])) {
-                    // An option left empty is named by the shop's "none" word, as it will be stored.
-                    $options = ProductRepository::variantOptions($varItem);
-                    $varItem['sku'] = ProductRepository::generateVariantSku(
-                        Input::text($body['sku']),
-                        $options['color_name'],
-                        $options['size'],
-                        $idx + 1
-                    );
-                }
-            }
-            unset($varItem);
-        }
+        // Variants without a SKU get one when they are saved (ProductRepository::uniqueVariantSku),
+        // where it can be checked against every SKU the shop already has.
 
         $errors = ProductValidator::validate($body);
         if (!empty($errors)) {
@@ -126,6 +113,9 @@ class AdminCatalogController
                 'Product created successfully.',
                 201
             );
+        } catch (ValidationFailed $e) {
+            // A SKU typed on a variant row is already in use: said against that row.
+            Response::error('Validation failed for new product.', 422, 'VALIDATION_ERROR', $e->details);
         } catch (\Throwable $e) {
             error_log('[Admin Product Create Failed] ' . $e->getMessage());
             $duplicate = $e instanceof \mysqli_sql_exception && (int) $e->getCode() === 1062;
@@ -170,6 +160,8 @@ class AdminCatalogController
         $mergedData = array_merge($existing, $body);
         try {
             $this->productRepo->update($id, $mergedData, $variants, $images);
+        } catch (ValidationFailed $e) {
+            Response::error('Validation failed.', 422, 'VALIDATION_ERROR', $e->details);
         } catch (\InvalidArgumentException $e) {
             Response::error($e->getMessage(), 422, 'VARIANT_CONFLICT');
         } catch (\mysqli_sql_exception $e) {
@@ -356,6 +348,13 @@ class AdminCatalogController
         $errors = CategoryValidator::validate($body, true);
         if (!empty($errors)) {
             Response::error('Please fix the highlighted fields.', 422, 'VALIDATION_ERROR', $errors);
+        }
+        // The shop asks buyers of this category to confirm their age, and knows the category by
+        // its slug (config/shop.json, ageCheck.categories): a new slug would quietly end the check.
+        $newSlug = Input::text($body['slug'] ?? null);
+        if ($newSlug !== '' && $newSlug !== (string) $existing['slug'] && Shop::isAgeRestrictedCategory((string) $existing['slug'])) {
+            $message = 'Products in this category are for adults only, so its address cannot be changed.';
+            Response::error($message, 422, 'VALIDATION_ERROR', ['slug' => $message]);
         }
         if (isset($body['slug'])) {
             $other = $this->categoryRepo->findBySlug(trim((string) $body['slug']));

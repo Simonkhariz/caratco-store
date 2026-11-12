@@ -152,6 +152,17 @@ export function optionPairProblems(pairs: Array<[string, string]>): Array<'empty
 }
 
 /**
+ * The choice a typed value means, whatever its capitals and spaces ("50 ML" is "50ml"), so one
+ * choice is never saved under two spellings. null when the value is empty or not in the list.
+ */
+export function listedChoice(value: string, choices: string[]): string | null {
+  const key = (text: string) => text.replace(/\s+/g, '').toLowerCase();
+  const typed = key(value);
+  if (typed === '') return null;
+  return choices.find((choice) => key(choice) === typed) ?? null;
+}
+
+/**
  * The specification rows worth saving: trimmed, without the rows that have no value (a suggested
  * name nobody filled in). `unnamed` counts the rows with a value but no name, which the form refuses.
  */

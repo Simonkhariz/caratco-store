@@ -90,7 +90,9 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({ product }) => {
           )}
           {hasSpecifications && (
             <div>
-              <h3 className="font-bold text-lg text-black mb-3">{SHOP.specs.label}</h3>
+              {/* The shop's own title ("Fragrance notes", "Materials and care") is for the owner's rows.
+                  With none, the block holds only the SKU and category lines, so it has a plain title. */}
+              <h3 className="font-bold text-lg text-black mb-3">{specifications.length > 0 ? SHOP.specs.label : 'Product details'}</h3>
               {/* The owner's own rows, name beside value. The table keeps its two columns on a
                   phone: long values wrap inside theirs. */}
               {specifications.length > 0 && (
@@ -126,7 +128,8 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({ product }) => {
           {dressStyles.length > 0 && (
             <div>
               <h3 className="font-bold text-lg text-black mb-2">{SHOP.style.short}</h3>
-              <p className="text-sm text-neutral-700 capitalize">{dressStyles.join(', ')}</p>
+              {/* As the shop wrote it ("LG", "Eau de Parfum"): no change of case. */}
+              <p className="text-sm text-neutral-700">{dressStyles.join(', ')}</p>
             </div>
           )}
           {!product.description && !hasSpecifications && !product.warranty && dressStyles.length === 0 && (
@@ -166,7 +169,7 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({ product }) => {
               <button
                 type="button"
                 onClick={() => setReviewOpen(true)}
-                className="bg-accent text-white hover:bg-accent-hover font-semibold px-5 py-2.5 rounded-full text-xs sm:text-sm"
+                className="bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-5 py-2.5 rounded-full text-xs sm:text-sm"
               >
                 Write a review
               </button>

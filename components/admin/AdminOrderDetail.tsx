@@ -454,6 +454,9 @@ export function AdminOrderDetail({ orderNumber }: { orderNumber: string }) {
                   : []),
               ]}
             />
+            {order.age_confirmed_at && (
+              <p className="mt-3 text-xs text-[#6b7280]">Age confirmed at checkout: {formatDateTime(order.age_confirmed_at)}</p>
+            )}
             {order.notes && (
               <div className="mt-3 rounded-lg bg-[#f9fafb] px-3 py-2 text-[13px] text-[#374151]">
                 <p className="text-xs font-semibold text-[#6b7280]">Customer note</p>

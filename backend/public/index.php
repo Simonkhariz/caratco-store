@@ -23,6 +23,8 @@ define('PUBLIC_PATH', __DIR__);
 require_once BASE_PATH . '/src/autoload.php';
 
 use App\Config\Env;
+use App\Config\Shop;
+use App\Config\ShopConfigError;
 use App\Controllers\AdminCatalogController;
 use App\Controllers\AdminDataController;
 use App\Controllers\AdminDevController;
@@ -116,6 +118,15 @@ if (($mediaMethod === 'GET' || $mediaMethod === 'HEAD') && str_starts_with($medi
 
 // 3. Handle CORS Allowlist & Browser Preflight
 CorsMiddleware::handle();
+
+// The shop's settings file is read before any route runs. When config/shop.json is missing or
+// broken every request stops here with a clear answer (and one line in the PHP error log): the
+// shop must never carry on as some default shop with its age check and heavy item fee off.
+try {
+    Shop::all();
+} catch (ShopConfigError $e) {
+    Response::error($e->getMessage(), 500, 'SHOP_CONFIG_ERROR');
+}
 
 // GET /api/v1/storefront/version: a short value that changes after every successful admin change.
 // Open storefront pages ask for it every 5 seconds, so it is answered here, before anything that

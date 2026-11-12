@@ -101,6 +101,11 @@ What kind of shop this copy is (its name, the names of the two product options, 
 for heavy items, an age check) comes from `backend/config/shop.json`, read by `App\Config\Shop`
 and by the storefront. It is not an environment setting.
 
+The shop does not run without that file. When it is missing or is not valid JSON every API request
+answers 500 `SHOP_CONFIG_ERROR` with a message that says so, one line goes to the PHP error log,
+and command-line scripts print the same message and stop: a shop must never carry on as a default
+one with its age check and heavy item fee off. (A byte order mark in front of the file is fine.)
+
 ---
 
 ## 4. Serving the API Locally
@@ -183,6 +188,7 @@ The latest ones:
 | `029_unpaid_order_cap.sql` | `orders.contact_phone`, `orders.device_hash` and the `max_unpaid_orders` setting. |
 | `030_product_specifications.sql` | `products.specifications` (JSON list of name and value), `products.warranty`, `products.is_heavy`. |
 | `031_heavy_item_delivery.sql` | `shipping_zones.heavy_item_fee`, charged per heavy item when `features.heavyDelivery` is on in `config/shop.json`. |
+| `032_age_flag_and_sales_start.sql` | `products.is_age_restricted` (for adults only whatever the category; the age check asks when this is set or the category is listed in `config/shop.json`), `orders.age_confirmed_at` (when the buyer confirmed their age), `products.units_sold_start` (a demo catalogue's starting sales figure; `units_sold` is this plus real paid units). |
 
 ### Demo data (seeding)
 ```bash
@@ -198,8 +204,21 @@ file. `backend/seeds/demo/catalog.example.json` shows the shape. Pictures named 
 missing picture stops the run before anything is written, and it never adds to a database that
 already has products. The folder or file can also be given in the env value `SEED_PATH`.
 
+Product keys worth knowing, beside the ones in the example:
+
+| Key | Meaning |
+| :--- | :--- |
+| `"age_restricted": true` | Marks the product for adults only (`products.is_age_restricted`), whatever its category. |
+| `"units_sold": 12` | A starting sales figure. Real paid units are added to it, never put in its place. |
+| `"stock": 15` | Only for a product without `variants`: the stock of its one plain variant. Without it that variant has 0. |
+| `"heavy": true`, `"warranty": "..."` | The heavy item mark and the warranty line. |
+
+Variant SKUs are generated (the product's SKU plus a short form of each option the product uses)
+and kept unique across the shop, so the file never names them.
+
 A copy without `seeds/demo/catalog.json` loads the clothing catalogue the tests use
-(`backend/tests/fixtures/seeds/*.sql`) instead.
+(`backend/tests/fixtures/seeds/*.sql`) instead. A copy that has neither (a host build without the
+tests) stops and says there is no demo catalogue to load.
 
 ### Releasing stock from unpaid orders
 Placing an order reserves its stock until `orders.expires_at` (30 minutes after the order or the
@@ -366,6 +385,7 @@ values on top (`TestKit::startApi`).
 | `MailOutboxTest` | Outbox delivery, retries and backoff, SMTP protocol (fake server), templates. |
 | `ShopKindsTest` | What `config/shop.json` changes: option names and the "none" words, specifications and warranty, the heavy item fee, age confirmation, the admin cookie name. |
 | `CatalogSeederTest` | The demo catalogue seeder (`seeds/seed.php` with a `.json` file), on its own throw-away database. |
+| `ShopSafeguardsTest` | Unique variant SKUs, stock kept when a variant is typed in again, the "none" word refused as a choice, cart lines without a variant id, exact colour matches, the age mark on a product and the recorded confirmation, starting sales figures, a missing or broken `config/shop.json`. |
 
 Each suite refuses to run directly against the configured database unless `ALLOW_DEV_DB=1` is set.
 

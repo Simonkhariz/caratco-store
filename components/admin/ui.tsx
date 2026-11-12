@@ -1164,7 +1164,20 @@ export function SearchInput({ value, onChange, placeholder, label }: { value: st
   );
 }
 
-export function Checkbox({ label, checked, onChange, hint }: { label: string; checked: boolean; onChange: (v: boolean) => void; hint?: string }) {
+export function Checkbox({
+  label,
+  checked,
+  onChange,
+  hint,
+  disabled,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  hint?: string;
+  /** Shown but locked: the hint should say why. */
+  disabled?: boolean;
+}) {
   const id = useId();
   return (
     <div className="flex items-start gap-2">
@@ -1172,6 +1185,7 @@ export function Checkbox({ label, checked, onChange, hint }: { label: string; ch
         id={id}
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
         className="mt-0.5 size-4 shrink-0 rounded border-[#d1d5db] accent-[#111827]"
       />

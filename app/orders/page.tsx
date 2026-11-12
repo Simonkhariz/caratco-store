@@ -74,7 +74,7 @@ export default function CustomerOrdersPage() {
               <button
                 type="button"
                 onClick={() => openAuthModal('magic')}
-                className="inline-flex items-center gap-2 bg-accent text-white hover:bg-accent-hover font-semibold px-6 py-3 rounded-full text-sm"
+                className="inline-flex items-center gap-2 bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-6 py-3 rounded-full text-sm"
               >
                 <Mail className="w-4 h-4" aria-hidden="true" />
                 Email me a sign-in link
@@ -101,7 +101,7 @@ export default function CustomerOrdersPage() {
               <h2 className="text-base font-bold text-black">No orders yet</h2>
               <p className="text-sm text-neutral-700 mt-1">Orders you place with {user.email} will appear here.</p>
             </div>
-            <Link href="/category" className="inline-block bg-accent text-white hover:bg-accent-hover font-semibold px-6 py-2.5 rounded-full text-sm">
+            <Link href="/category" className="inline-block bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-6 py-2.5 rounded-full text-sm">
               Start shopping
             </Link>
           </div>
@@ -171,7 +171,7 @@ export default function CustomerOrdersPage() {
                     </span>
                     <div className="flex items-center gap-3">
                       {status.canPay && (
-                        <Link href={`${trackHref}&pay=1`} className="bg-accent text-white hover:bg-accent-hover font-semibold px-4 py-2 rounded-full text-xs">
+                        <Link href={`${trackHref}&pay=1`} className="bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-4 py-2 rounded-full text-xs">
                           Pay now
                         </Link>
                       )}

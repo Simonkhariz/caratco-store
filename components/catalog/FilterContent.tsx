@@ -93,7 +93,7 @@ export const FilterContent: React.FC<FilterContentProps> = ({ filters, onFilterC
   const styles = SHOP.style.enabled ? (facets?.dress_styles ?? []) : [];
   const chipClass = (isSelected: boolean) =>
     `px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-      isSelected ? 'bg-accent text-white' : 'bg-surface text-neutral-700 hover:bg-neutral-200'
+      isSelected ? 'bg-accent text-accent-ink' : 'bg-surface text-neutral-700 hover:bg-neutral-200'
     }`;
 
   return (
@@ -221,7 +221,7 @@ export const FilterContent: React.FC<FilterContentProps> = ({ filters, onFilterC
                   aria-pressed={isSelected}
                   onClick={() => onFilterChange({ selectedColors: toggleIn(filters.selectedColors, col.name) })}
                   className={`inline-flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-sm font-medium transition-colors ${
-                    isSelected ? 'border-accent bg-accent text-white' : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
+                    isSelected ? 'border-accent bg-accent text-accent-ink' : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
                   }`}
                   aria-label={`${col.name} (${col.product_count})`}
                 >
@@ -303,7 +303,7 @@ export const FilterContent: React.FC<FilterContentProps> = ({ filters, onFilterC
         <button
           type="button"
           onClick={onDone}
-          className="w-full bg-accent text-white hover:bg-accent-hover font-semibold py-3.5 rounded-full transition-colors shadow-md text-sm"
+          className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3.5 rounded-full transition-colors shadow-md text-sm"
         >
           Show results
         </button>

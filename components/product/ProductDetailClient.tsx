@@ -8,8 +8,17 @@ import { useWishlist } from '@/context/WishlistContext';
 import { ImageGallery } from '@/components/product/ImageGallery';
 import { ShareProduct } from '@/components/product/ShareProduct';
 import { VariantSelector } from '@/components/product/VariantSelector';
-import { colorStockFor, findVariant, firstChoice, selectionLabelFor, sizeAfterColorChange, sizeStatesFor, stockMessageFor } from '@/lib/variants';
-import { SHOP } from '@/lib/shop';
+import {
+  colorStockFor,
+  findVariant,
+  firstChoice,
+  selectionLabelFor,
+  sizeAfterColorChange,
+  sizeStatesFor,
+  soldOutColorName,
+  stockMessageFor,
+} from '@/lib/variants';
+import { SHOP, option1HelpFor } from '@/lib/shop';
 import { StickyMobileBar } from '@/components/product/StickyMobileBar';
 import { ProductTabs } from '@/components/product/ProductTabs';
 import { ProductCard } from '@/components/ui/ProductCard';
@@ -156,7 +165,7 @@ export function ProductDetailClient({ id, initial = null }: { id: string; initia
   const maxQuantity = Math.max(1, Math.min(MAX_QUANTITY_PER_LINE, stock));
   const canPurchase = !!selectedVariant && stock > 0;
   const displayPrice = selectedVariant?.price ?? product?.price ?? 0;
-  const stockMessage = stockMessageFor(selectedVariant, variants.length);
+  const stockMessage = stockMessageFor(selectedVariant, variants.length, soldOutColorName(variants, selectedColor));
 
   const handleAddToCart = () => {
     if (!product || !selectedVariant || !canPurchase) return;
@@ -206,7 +215,7 @@ export function ProductDetailClient({ id, initial = null }: { id: string; initia
         </p>
         <Link
           href="/category"
-          className="inline-flex items-center gap-2 bg-accent text-white hover:bg-accent-hover font-semibold px-8 py-3.5 rounded-full text-sm transition-all shadow-md"
+          className="inline-flex items-center gap-2 bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-8 py-3.5 rounded-full text-sm transition-all shadow-md"
         >
           <span>Explore All Products</span>
           <HugeiconsIcon icon={ArrowRight01Icon} size={16} />
@@ -378,7 +387,7 @@ export function ProductDetailClient({ id, initial = null }: { id: string; initia
             onQuantityChange={setQuantity}
             canPurchase={canPurchase}
             stockMessage={stockMessage}
-            option1Help={SHOP.option1.help}
+            option1Help={option1HelpFor(product.category)}
             onAddToCart={handleAddToCart}
             onBuyNow={handleBuyNow}
             isWishlisted={isWishlisted}

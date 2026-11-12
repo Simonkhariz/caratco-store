@@ -279,7 +279,7 @@ export const AuthModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-full bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 mt-2"
+                className="w-full py-3.5 px-6 rounded-full bg-accent text-accent-ink text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 mt-2"
               >
                 {isSubmitting ? 'Signing in…' : 'Sign in'}
               </button>
@@ -341,7 +341,7 @@ export const AuthModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-full bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 mt-2"
+                className="w-full py-3.5 px-6 rounded-full bg-accent text-accent-ink text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50 mt-2"
               >
                 {isSubmitting ? 'Creating account…' : 'Create account'}
               </button>
@@ -367,7 +367,7 @@ export const AuthModal: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3.5 px-6 rounded-full bg-accent text-white text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50"
+                    className="w-full py-3.5 px-6 rounded-full bg-accent text-accent-ink text-sm font-semibold hover:bg-accent-hover transition-colors disabled:opacity-50"
                   >
                     {isSubmitting ? 'Sending link…' : 'Send sign-in link'}
                   </button>

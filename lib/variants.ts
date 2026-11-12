@@ -66,10 +66,26 @@ export function sizeAfterColorChange(variants: ProductVariant[], color: ProductC
   return size === null && inStock.length === 1 ? inStock[0].size : null;
 }
 
-/** Short stock line under the options. It names only the options the product uses. */
-export function stockMessageFor(variant: ProductVariant | null, variantCount: number): string | null {
+/**
+ * The chosen colour's name when nothing at all is in stock in it, else null. In that colour there
+ * is no size left to choose, so the stock line says "sold out" instead of asking for a choice.
+ */
+export function soldOutColorName(variants: ProductVariant[], color: ProductColor | null): string | null {
+  if (!color) return null;
+  const ofColor = variants.filter((v) => v.color.name === color.name);
+  return ofColor.length > 0 && ofColor.every((v) => v.stock <= 0) ? color.name : null;
+}
+
+/**
+ * Short stock line under the options. It names only the options the product uses.
+ * `soldOutColor` is soldOutColorName() for the chosen colour.
+ */
+export function stockMessageFor(variant: ProductVariant | null, variantCount: number, soldOutColor: string | null = null): string | null {
   if (!variant) {
-    return variantCount === 0 ? 'This product is not available to order right now.' : `Choose ${withArticle(option1Word)} to continue.`;
+    if (variantCount === 0) return 'This product is not available to order right now.';
+    // Nothing is chosen because nothing can be: every size of the chosen colour is sold out.
+    if (soldOutColor !== null) return hasOption2(soldOutColor) ? `Sold out in this ${option2Word}.` : 'Sold out.';
+    return `Choose ${withArticle(option1Word)} to continue.`;
   }
   const uses1 = hasOption1(variant.size);
   const uses2 = hasOption2(variant.color.name);

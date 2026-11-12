@@ -206,3 +206,16 @@ test('a product page answer brings its specifications, warranty and flags; a lis
   assert.deepEqual(api.mapApiProductToStorefront({ ...product, sku: 'TEE-1', category_name: 'Tops' }).details, ['SKU: TEE-1', 'Category: Tops']);
   assert.equal(api.mapApiProductToStorefront({ ...product, warranty: null, specifications: null }).warranty, undefined);
 });
+
+test("a product's style keeps the shop's spelling", () => {
+  assert.deepEqual(api.mapApiProductToStorefront({ ...product, dress_style: 'LG' }).dressStyle, ['LG']);
+  assert.deepEqual(api.mapApiProductToStorefront({ ...product, dress_style: ' Eau de Parfum ' }).dressStyle, ['Eau de Parfum']);
+  for (const none of [null, '', '  ']) assert.deepEqual(api.mapApiProductToStorefront({ ...product, dress_style: none }).dressStyle, []);
+});
+
+test('the age check reads the answer the server worked out, whatever else it sends', () => {
+  // `is_age_restricted` is the owner's own flag on one product; `age_restricted` already counts it.
+  assert.equal(api.mapApiProductToStorefront({ ...product, is_age_restricted: true, age_restricted: true }).ageRestricted, true);
+  assert.equal(api.mapApiProductToStorefront({ ...product, is_age_restricted: false, age_restricted: true }).ageRestricted, true);
+  assert.equal(api.mapApiProductToStorefront({ ...product, is_age_restricted: false, age_restricted: false }).ageRestricted, false);
+});

@@ -408,7 +408,9 @@ $t->check('a scent is matched by its exact name, whatever the case', 1, $found(s
 $t->check('not by a colour family', 0, $found('black'));
 $t->check('nor by part of the name', 0, $found('Midnight'));
 Shop::overrideForTests([]);
-$t->check('a colour is still matched by its family ("midnight" is a black)', 1, $found('black'));
+// No variant is called just "Green" or "Midnight", so the family words and the part match apply
+// (ShopSafeguardsTest covers a name that some variant really has).
+$t->check('a colour is still matched by its family ("olive" is a green)', 1, $found('green'));
 $t->check('and by part of its name', 1, $found('midnight'));
 
 Shop::overrideForTests(['name' => 'SCENT.CO', 'tagline' => '', 'theme' => ['accent' => '#7A1F3D', 'accentInk' => '#FFF8F0']]);

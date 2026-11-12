@@ -259,9 +259,10 @@ function ZoneModal({
   const [form, setForm] = useState<ShippingZoneInput>(EMPTY_ZONE);
   const [feeText, setFeeText] = useState('');
   const [heavyText, setHeavyText] = useState('0');
-  const guardedClose = useDiscardGuard(!!editing, [form, feeText, heavyText], onClose);
   const [includedText, setIncludedText] = useState('1');
   const [extraText, setExtraText] = useState('0');
+  // Every box that is typed into, so Cancel asks before throwing away a change to any of them.
+  const guardedClose = useDiscardGuard(!!editing, [form, feeText, includedText, extraText, heavyText], onClose);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [lastEditing, setLastEditing] = useState<typeof editing>(null);

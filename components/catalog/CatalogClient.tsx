@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterState, Product } from '@/types';
 import { CatalogFacets, errorMessage, getCatalogFacets, getProducts, mapApiProductToStorefront, ProductListResponse } from '@/lib/api-client';
 import { buildCatalogUrl, catalogApiParams, EMPTY_FILTERS, parseCatalogParams } from '@/lib/catalog-query';
-import { shopFilters, styleWord } from '@/lib/shop';
+import { shopFilters, styleHeadingParts, styleName } from '@/lib/shop';
 import { FilterSidebar } from '@/components/catalog/FilterSidebar';
 import { FilterDrawer } from '@/components/catalog/FilterDrawer';
 import { ProductGrid } from '@/components/catalog/ProductGrid';
@@ -134,14 +134,25 @@ export function CatalogClient({ seed }: { seed: CatalogSeed }) {
   const handleRetry = () => setRetry((r) => ({ key: queryKey, count: (r.key === queryKey ? r.count : 0) + 1 }));
 
   const activeCategory = facets?.categories.find((c) => c.slug.toLowerCase() === filters.category?.toLowerCase());
-  const activeTitle = activeCategory
+  // The address carries the style in lower case; people read it as the shop wrote it ("LG").
+  const activeStyle = filters.dressStyle ? styleName(filters.dressStyle, facets?.dress_styles ?? []) : null;
+  const [styleBefore, styleAfter] = styleHeadingParts();
+  const activeTitle: React.ReactNode = activeCategory
     ? activeCategory.name
     : filters.category
       ? filters.category.replace(/-/g, ' ')
       : filters.searchQuery.trim()
         ? `Results for “${filters.searchQuery.trim()}”`
-        : filters.dressStyle
-          ? `${filters.dressStyle} ${styleWord}`
+        : activeStyle
+          ? (
+            // The shop's own heading for a style ("{value} style"). The headings here are shown
+            // with capital first letters; the style's name keeps its own spelling.
+            <>
+              {styleBefore}
+              <span className="normal-case">{activeStyle}</span>
+              {styleAfter}
+            </>
+          )
           : filters.flashDeals
             ? 'Flash deals'
             : filters.featured
@@ -179,6 +190,7 @@ export function CatalogClient({ seed }: { seed: CatalogSeed }) {
           products={products}
           totalCount={totalCount}
           categoryTitle={activeTitle}
+          styleLabel={activeStyle}
           filters={filters}
           onFilterChange={handleFilterChange}
           onReset={handleReset}

@@ -39,7 +39,7 @@ export const CartItemList: React.FC = () => {
           <p className="text-sm text-neutral-600 mb-6 max-w-sm mx-auto">{SHOP.wording.emptyCart}</p>
           <Link
             href="/category"
-            className="inline-block bg-accent text-white px-8 py-3.5 rounded-full text-sm font-semibold hover:bg-accent-hover transition-colors shadow-md"
+            className="inline-block bg-accent text-accent-ink px-8 py-3.5 rounded-full text-sm font-semibold hover:bg-accent-hover transition-colors shadow-md"
           >
             Start shopping
           </Link>

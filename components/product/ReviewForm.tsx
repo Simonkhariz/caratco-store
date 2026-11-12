@@ -182,7 +182,7 @@ export function ReviewForm({ open, onClose, productSlug, productName }: ReviewFo
             type="button"
             onClick={onClose}
             data-autofocus
-            className="bg-accent text-white hover:bg-accent-hover font-semibold px-8 py-3 rounded-full text-sm"
+            className="bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-8 py-3 rounded-full text-sm"
           >
             Done
           </button>
@@ -331,7 +331,7 @@ export function ReviewForm({ open, onClose, productSlug, productName }: ReviewFo
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-accent text-white hover:bg-accent-hover font-semibold py-3.5 rounded-full text-sm disabled:opacity-60"
+            className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3.5 rounded-full text-sm disabled:opacity-60"
           >
             {submitting ? 'Sending…' : 'Submit review'}
           </button>

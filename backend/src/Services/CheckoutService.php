@@ -291,9 +291,14 @@ class CheckoutService
                 $verifiedItems = $this->verifyAndPriceItems($items);
 
                 // Items only adults may buy: the buyer has to say they are old enough, on every order.
-                if (self::needsAgeCheck($verifiedItems) && ($input['age_confirmed'] ?? null) !== true) {
-                    $message = 'Please confirm that you are ' . Shop::minimumAge() . ' or older to order these items.';
-                    throw new ValidationFailed($message, ['age_confirmed' => $message]);
+                // When they did is kept on the order (age_confirmed_at), as the owner's record.
+                $ageConfirmedAt = null;
+                if (self::needsAgeCheck($verifiedItems)) {
+                    if (($input['age_confirmed'] ?? null) !== true) {
+                        $message = 'Please confirm that you are ' . Shop::minimumAge() . ' or older to order these items.';
+                        throw new ValidationFailed($message, ['age_confirmed' => $message]);
+                    }
+                    $ageConfirmedAt = date('Y-m-d H:i:s');
                 }
 
                 // The fee grows with the number of items, and with each heavy one where the shop charges for those.
@@ -417,9 +422,9 @@ class CheckoutService
                         `order_number`, `user_id`, `guest_email`, `contact_phone`, `device_hash`, `guest_access_token_hash`,
                         `shipping_zone_id`, `shipping_zone_snapshot`, `shipping_address_snapshot`,
                         `order_status`, `payment_status`, `currency`, `subtotal`, `discount_amount`,
-                        `shipping_fee`, `grand_total`, `applied_promo_code`, `notes`, `expires_at`, `idempotency_key`
-                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', 'pending', 'NGN', ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), ?)",
-                    'sissssissddddssis',
+                        `shipping_fee`, `grand_total`, `applied_promo_code`, `notes`, `expires_at`, `idempotency_key`, `age_confirmed_at`
+                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', 'pending', 'NGN', ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), ?, ?)",
+                    'sissssissddddssiss',
                     [
                         $orderNumber,
                         $userId,
@@ -438,6 +443,7 @@ class CheckoutService
                         $notes,
                         PaymentAttempts::gatewayWindowMinutes(),
                         $idempotencyKey,
+                        $ageConfirmedAt,
                     ]
                 );
 
@@ -608,7 +614,7 @@ class CheckoutService
             // 1. Fetch product from database
             $product = $this->db->fetchOne(
                 "SELECT p.`id`, p.`name`, p.`slug`, p.`status`, p.`product_type`, p.`base_price`, p.`currency`, p.`sku`,
-                        p.`warranty`, p.`is_heavy`, c.`slug` AS `category_slug`
+                        p.`warranty`, p.`is_heavy`, p.`is_age_restricted`, c.`slug` AS `category_slug`
                  FROM `products` p LEFT JOIN `categories` c ON c.`id` = p.`category_id` WHERE p.`id` = ?",
                 'i',
                 [$productId]
@@ -634,19 +640,19 @@ class CheckoutService
                 }
             } else {
                 // Legacy carts without a variant_id: accept only an exact size + colour match, or a
-                // product that has a single option.
-                $size = isset($item['size']) ? trim((string) $item['size']) : '';
-                $color = isset($item['color']) ? (is_array($item['color']) ? trim((string) ($item['color']['name'] ?? '')) : trim((string) $item['color'])) : '';
+                // product that has a single option. An option the line leaves out is one the product
+                // does not use, stored as the shop's "none" word: {size: "50ml"} alone finds the
+                // 50ml variant of a product that has no second option.
+                $size = Input::text($item['size'] ?? null);
+                $color = is_array($item['color'] ?? null) ? Input::text($item['color']['name'] ?? null) : Input::text($item['color'] ?? null);
 
-                if ($size !== '' && $color !== '') {
-                    $variant = $this->db->fetchOne(
-                        "SELECT {$variantColumns} FROM `product_variants`
-                         WHERE `product_id` = ? AND `is_active` = 1 AND LOWER(`size`) = LOWER(?) AND LOWER(`color_name`) = LOWER(?)
-                         LIMIT 1",
-                        'iss',
-                        [$productId, $size, $color]
-                    );
-                }
+                $variant = $this->db->fetchOne(
+                    "SELECT {$variantColumns} FROM `product_variants`
+                     WHERE `product_id` = ? AND `is_active` = 1 AND LOWER(`size`) = LOWER(?) AND LOWER(`color_name`) = LOWER(?)
+                     LIMIT 1",
+                    'iss',
+                    [$productId, $size !== '' ? $size : Shop::option1None(), $color !== '' ? $color : Shop::option2None()]
+                );
 
                 if ($variant === null) {
                     $activeVariants = $this->db->fetchAll(
@@ -660,7 +666,8 @@ class CheckoutService
                 }
 
                 if ($variant === null) {
-                    $chosen = trim($size . ' / ' . $color, ' /');
+                    // What the buyer chose, without the "none" words.
+                    $chosen = Shop::optionsText($size, $color);
                     throw new InvalidArgumentException(
                         'Please choose an available ' . Shop::option1Word() . ' and ' . Shop::option2Word() . " for '{$product['name']}'"
                         . ($chosen !== '' ? " ('{$chosen}' is not offered)." : '.')
@@ -703,7 +710,8 @@ class CheckoutService
                 'line_total' => $lineTotal,
                 'stock_available' => $availableStock,
                 'is_heavy' => (bool) ($product['is_heavy'] ?? false),
-                'age_restricted' => Shop::isAgeRestricted($product['category_slug'] ?? null),
+                // For adults only: by its category, or because the product itself is marked.
+                'age_restricted' => Shop::isAgeRestricted($product['category_slug'] ?? null, (int) ($product['is_age_restricted'] ?? 0) === 1),
             ];
         }
 

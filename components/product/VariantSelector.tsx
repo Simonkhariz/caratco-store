@@ -91,6 +91,10 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   // An option the product does not use holds only the shop's "none" value: it gets no picker.
   const usesOption1 = sizes.some((size) => hasOption1(size));
   const usesOption2 = colors.some((color) => hasOption2(color.name));
+  // The shopper picked an option-2 value that is sold out in every option-1 value (so none is
+  // chosen), and can pick another: the stock line says "Sold out in this colour." and an empty
+  // option-1 picker under it would only say the same again.
+  const nothingToChoose = usesOption2 && colors.length > 1 && shownSizes.length === 0 && selectedSize === null;
   return (
     <div className="space-y-6">
       {/* 1. Option 2, a colour in the template (radio group: arrow keys move and select). Round
@@ -132,7 +136,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                     key={color.name}
                     {...radio}
                     className={`px-6 py-3 rounded-full text-xs sm:text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-                      isSelected ? 'bg-accent text-white shadow-sm' : 'bg-surface text-neutral-700 hover:bg-neutral-200'
+                      isSelected ? 'bg-accent text-accent-ink shadow-sm' : 'bg-surface text-neutral-700 hover:bg-neutral-200'
                     } ${inStock ? '' : 'line-through opacity-60'}`}
                   >
                     {color.name}
@@ -165,7 +169,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       {/* 2. Option 1, a size in the template (radio group; only the values in stock in the chosen
           option 2 are shown) */}
-      {usesOption1 && (
+      {usesOption1 && !nothingToChoose && (
         <div className="pb-6 border-b border-neutral-200">
           <p id={`${uid}-size`} className="text-xs font-bold text-neutral-600 uppercase tracking-wider block mb-3">
             Choose {SHOP.option1.label}: <span className="text-black font-bold normal-case">{selectedSize && shownSizes.includes(selectedSize) ? selectedSize : '—'}</span>
@@ -195,7 +199,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                       focusSibling(e.currentTarget, next);
                     }}
                     className={`px-6 py-3 rounded-full text-xs sm:text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${
-                      isSelected ? 'bg-accent text-white shadow-sm' : 'bg-surface text-neutral-700 hover:bg-neutral-200'
+                      isSelected ? 'bg-accent text-accent-ink shadow-sm' : 'bg-surface text-neutral-700 hover:bg-neutral-200'
                     }`}
                   >
                     {size}
@@ -248,7 +252,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
             type="button"
             onClick={onAddToCart}
             disabled={!canPurchase || !ready}
-            className="flex-1 bg-accent text-white hover:bg-accent-hover font-semibold py-4 rounded-full transition-all shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base disabled:bg-neutral-300 disabled:text-neutral-700 disabled:shadow-none disabled:cursor-not-allowed"
+            className="flex-1 bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-4 rounded-full transition-all shadow-lg flex items-center justify-center gap-2 text-sm sm:text-base disabled:bg-neutral-300 disabled:text-neutral-700 disabled:shadow-none disabled:cursor-not-allowed"
           >
             <HugeiconsIcon icon={ShoppingBag01Icon} size={20} />
             <span>{canPurchase ? 'Add to Cart' : 'Unavailable'}</span>

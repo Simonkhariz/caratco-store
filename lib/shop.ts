@@ -27,15 +27,23 @@ export interface ShopConfig {
   tagline: string;
   hero: { title: string; subtitle: string; cta: string; image: string; cutout: boolean };
   theme: { accent: string; accentHover: string; accentInk: string; surface: string; card: string; hero: string };
-  option1: ShopOption & { choices: string[]; help: string };
+  option1: ShopOption & {
+    choices: string[];
+    /** One quiet line under the option-1 picker on the product page ('' for none). */
+    help: string;
+    /** The same line for the products of one category, by category slug: a ring size tip belongs under rings, not necklaces. */
+    helpByCategory: Record<string, string>;
+  };
   option2: ShopOption & { swatch: boolean; placeholder: string };
   style: {
     enabled: boolean;
     /** The filter's full name: "Dress style", "Scent family", "Brand". */
     label: string;
     plural: string;
-    /** The short name beside a value ("Style: casual", "casual style"). The label when left out. */
+    /** The short name beside a value ("Style: Casual"). The label when left out. */
     short: string;
+    /** The catalogue heading for one style, with {value} where its name goes ("{value} style"). The value alone when left out. */
+    heading: string;
     browseTitle: string;
     values: string[];
     /** Home page tile pictures, keyed by the style's name in lower case. */
@@ -67,7 +75,13 @@ const given = raw as ShopConfig;
 // lacks them still reads well.
 export const SHOP: ShopConfig = {
   ...given,
-  style: { ...given.style, short: given.style.short || given.style.label },
+  option1: { ...given.option1, helpByCategory: given.option1.helpByCategory ?? {} },
+  style: {
+    ...given.style,
+    short: given.style.short || given.style.label,
+    // A pattern without {value} would name no style at all: the value alone is shown instead.
+    heading: given.style.heading?.includes('{value}') ? given.style.heading : '{value}',
+  },
   wording: {
     ...given.wording,
     searchExampleShort: given.wording.searchExampleShort ?? '',
@@ -118,10 +132,47 @@ export function shopFilters<T extends { dressStyle: string | null; selectedSizes
   };
 }
 
+/**
+ * The tip under the option-1 picker on a product's page: the one for its category when the shop
+ * wrote one (option1.helpByCategory, by category slug), otherwise the shop's general tip, otherwise
+ * ''. A category given an empty text shows no tip at all.
+ */
+export function option1HelpFor(
+  categorySlug: string | null | undefined,
+  option1: Pick<ShopConfig['option1'], 'help' | 'helpByCategory'> = SHOP.option1
+): string {
+  const slug = (categorySlug ?? '').trim().toLowerCase();
+  const own = slug ? Object.entries(option1.helpByCategory ?? {}).find(([key]) => key.trim().toLowerCase() === slug) : undefined;
+  return (own ? own[1] : option1.help) ?? '';
+}
+
+/**
+ * A style as the shop wrote it ("LG", "Eau de Parfum"). A link carries the style in lower case;
+ * people are shown the stored spelling: the one in `known` (the catalogue's own list) or in the
+ * shop's settings, and the text as it came when neither has it.
+ */
+export function styleName(value: string | null | undefined, known: readonly string[] = []): string {
+  const wanted = (value ?? '').trim();
+  const match = [...known, ...SHOP.style.values].find((name) => name.trim().toLowerCase() === wanted.toLowerCase());
+  return match?.trim() || wanted;
+}
+
+/** The words of the catalogue heading for a style, before and after the style's name: ['', ' style']. */
+export function styleHeadingParts(): [string, string] {
+  const [before, ...after] = SHOP.style.heading.split('{value}');
+  return [before, after.join('')];
+}
+
+/** The catalogue heading for one style, from the shop's pattern: "Casual style", "Gifts for Her", or the value alone. */
+export function styleHeading(value: string): string {
+  const [before, after] = styleHeadingParts();
+  return `${before}${value}${after}`;
+}
+
 /** Lower case for the middle of a sentence: "Choose a size", "in this colour". */
 export const option1Word = SHOP.option1.label.toLowerCase();
 export const option2Word = SHOP.option2.label.toLowerCase();
-/** "casual style", "filters for category, colour, size, style and price". */
+/** "filters for category, colour, size, style and price". */
 export const styleWord = SHOP.style.short.toLowerCase();
 
 /** "a size", "an option": the label with its article. */

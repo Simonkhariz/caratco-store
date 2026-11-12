@@ -358,7 +358,7 @@ function ShopMenu() {
                   key={style}
                   href={`/category?style=${encodeURIComponent(style.toLowerCase())}`}
                   onClick={() => setOpen(false)}
-                  className="block rounded-lg px-2 py-1.5 text-sm capitalize text-neutral-800 transition-colors hover:bg-neutral-50"
+                  className="block rounded-lg px-2 py-1.5 text-sm text-neutral-800 transition-colors hover:bg-neutral-50"
                 >
                   {style}
                 </Link>
@@ -507,7 +507,7 @@ export const Header: React.FC = () => {
               {totalQuantity > 0 && (
                 <span
                   aria-hidden="true"
-                  className="animate-in zoom-in absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-accent px-1 text-xs font-bold text-white"
+                  className="animate-in zoom-in absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-accent px-1 text-xs font-bold text-accent-ink"
                 >
                   {totalQuantity}
                 </span>
@@ -526,7 +526,7 @@ export const Header: React.FC = () => {
                 aria-controls={user ? profileMenuId : undefined}
               >
                 {user ? (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold uppercase text-white shadow-sm">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold uppercase text-accent-ink shadow-sm">
                     {initials(user.full_name)}
                   </span>
                 ) : (
@@ -643,7 +643,7 @@ export const Header: React.FC = () => {
             <div className="border-t border-neutral-100 pt-3">
               <p className="mb-1 text-xs font-bold uppercase tracking-wider text-neutral-600">{SHOP.style.plural}</p>
               {dressStyles.map((s) => (
-                <Link key={s} href={`/category?style=${encodeURIComponent(s.toLowerCase())}`} onClick={closeMobile} className={`${mobileLink} capitalize`}>
+                <Link key={s} href={`/category?style=${encodeURIComponent(s.toLowerCase())}`} onClick={closeMobile} className={mobileLink}>
                   {s}
                 </Link>
               ))}
@@ -674,7 +674,7 @@ export const Header: React.FC = () => {
             </Link>
             <Link href="/cart" onClick={closeMobile} className={`${mobileLink} flex items-center justify-between`}>
               <span>Cart</span>
-              {totalQuantity > 0 && <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-white">{totalQuantity}</span>}
+              {totalQuantity > 0 && <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-accent-ink">{totalQuantity}</span>}
             </Link>
             <button
               type="button"

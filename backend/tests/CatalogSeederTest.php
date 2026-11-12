@@ -68,7 +68,13 @@ $write = static function (array $catalog) use ($tmp): string {
 $t->ok('the throw-away database is migrated', $code === 0 && $count('schema_migrations') > 0, $out);
 $t->check('migration 030 added the product columns', 3, (int) $value("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'products' AND COLUMN_NAME IN ('specifications', 'warranty', 'is_heavy')", 's', [$seedDb]));
 $t->check('migration 031 added the heavy item fee', 1, (int) $value("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'shipping_zones' AND COLUMN_NAME = 'heavy_item_fee'", 's', [$seedDb]));
-foreach (['030_product_specifications.sql', '031_heavy_item_delivery.sql'] as $migration) {
+$t->check('migration 032 added the age mark, the starting sales count and the confirmation time', 3, (int) $value(
+    "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ?
+       AND ((TABLE_NAME = 'products' AND COLUMN_NAME IN ('is_age_restricted', 'units_sold_start')) OR (TABLE_NAME = 'orders' AND COLUMN_NAME = 'age_confirmed_at'))",
+    's',
+    [$seedDb]
+));
+foreach (['030_product_specifications.sql', '031_heavy_item_delivery.sql', '032_age_flag_and_sales_start.sql'] as $migration) {
     $again = mysqli_connect((string) Env::get('DB_HOST', '127.0.0.1'), (string) Env::get('DB_USERNAME', 'root'), (string) Env::get('DB_PASSWORD', ''), $seedDb, Env::int('DB_PORT', 3306));
     $ok = $again->multi_query((string) file_get_contents(BASE_PATH . "/migrations/{$migration}"));
     while ($ok && $again->more_results() && $again->next_result()) {
@@ -194,7 +200,7 @@ $rich = $write([
     'products' => [
         [
             'name' => 'Oud  Royale', 'category' => 'for-her', 'description' => 'Deep and smoky.', 'price' => 25000, 'original_price' => 30000,
-            'style' => 'Woody', 'featured' => true, 'flash_deal' => true, 'rating_start' => 4.7, 'units_sold' => 12, 'warranty' => '6 months', 'heavy' => true,
+            'style' => 'Woody', 'featured' => true, 'flash_deal' => true, 'rating_start' => 4.7, 'units_sold' => 12, 'warranty' => '6 months', 'heavy' => true, 'age_restricted' => true,
             'specifications' => [['name' => 'Top notes', 'value' => 'Bergamot, pink pepper'], ['name' => '', 'value' => 'dropped']],
             'images' => ['p-oud-1.png', 'p-oud-2.webp', '/images/hero/extra.webp'],
             'variants' => [
@@ -205,6 +211,7 @@ $rich = $write([
         ],
         ['name' => 'Gift Card Holder', 'price' => 1500, 'variants' => [['stock' => 40]]],
         ['name' => 'Sample Vial', 'category' => 'everyday', 'price' => 900],
+        ['name' => 'Tester Strip', 'price' => 300, 'stock' => 15],
     ],
     'reviews' => [
         ['product' => 'oud-royale', 'name' => 'Ada O.', 'rating' => 5, 'title' => 'Lasts all day', 'body' => 'My new favourite.'],
@@ -231,6 +238,8 @@ $oudId = (int) ($oud['id'] ?? 0);
 $t->check('the product: name tidied, style, warranty, heavy, sold, specifications', ['Oud Royale', 'Woody', '6 months', 1, 12, [['name' => 'Top notes', 'value' => 'Bergamot, pink pepper']]], [
     $oud['name'] ?? null, $oud['dress_style'] ?? null, $oud['warranty'] ?? null, (int) ($oud['is_heavy'] ?? 0), (int) ($oud['units_sold'] ?? 0), json_decode((string) ($oud['specifications'] ?? ''), true),
 ]);
+$t->check('"age_restricted" in the file marks the product for adults only', [1, 0], [(int) ($oud['is_age_restricted'] ?? -1), $count('products', "`slug` <> 'oud-royale' AND `is_age_restricted` = 1")]);
+$t->check('its sales figure is a starting figure, which real sales add to', [12, 12, 0], [(int) ($oud['units_sold_start'] ?? -1), (int) ($oud['units_sold'] ?? -1), $count('products', "`slug` <> 'oud-royale' AND (`units_sold_start` <> 0 OR `units_sold` <> 0)")]);
 $ends = strtotime((string) ($oud['flash_deal_ends_at'] ?? '')) ?: 0;
 $t->ok('a flash deal ends 7 days after seeding', (int) ($oud['is_flash_deal'] ?? 0) === 1 && abs($ends - (time() + 7 * 86400)) < 600, (string) ($oud['flash_deal_ends_at'] ?? ''));
 $t->check('pictures in order, the first one the main one', [['/uploads/catalog/p-oud-1.png', 1], ['/uploads/catalog/p-oud-2.webp', 0], ['/images/hero/extra.webp', 0]], array_map(
@@ -247,10 +256,17 @@ $t->check('variants: an empty second option is stored as the "none" word', [['50
     $oudVariants
 ));
 $skus = array_column($oudVariants, 'sku');
-$t->ok('options that shorten to the same letters still get their own SKU', count(array_unique($skus)) === 3 && $skus[1] === $skus[0] . '-2', implode(',', $skus));
+$oudSku = (string) ($oud['sku'] ?? '');
+$t->check('SKUs come from the same helper as the admin\'s: unique, and without a part for an unused option', ["{$oudSku}-EAU-50M", "{$oudSku}-EAU-50M-2", "{$oudSku}-100"], $skus);
+$t->check('a variant with neither option', [$value("SELECT `sku` FROM `{$seedDb}`.`products` WHERE `slug` = 'gift-card-holder'") . '-STD'], array_column($t->sql("SELECT v.`sku` FROM `{$seedDb}`.`product_variants` v JOIN `{$seedDb}`.`products` p ON p.id = v.product_id WHERE p.`slug` = 'gift-card-holder'"), 'sku'));
 $holder = $t->sql("SELECT v.`size`, v.`color_name`, v.`stock_quantity`, p.`category_id` FROM `{$seedDb}`.`product_variants` v JOIN `{$seedDb}`.`products` p ON p.id = v.product_id WHERE p.`slug` = 'gift-card-holder'");
 $t->check('a variant with no options, on a product with no category', [['Standard', 'Default', 40, null]], array_map(static fn (array $v): array => [$v['size'], $v['color_name'], (int) $v['stock_quantity'], $v['category_id']], $holder));
-$t->check('a product without variants gets one plain variant', [['Standard', 'Default']], array_map('array_values', $t->sql("SELECT v.`size`, v.`color_name` FROM `{$seedDb}`.`product_variants` v JOIN `{$seedDb}`.`products` p ON p.id = v.product_id WHERE p.`slug` = 'sample-vial'")));
+$plainVariant = static fn (string $slug): array => array_map(
+    static fn (array $v): array => [$v['size'], $v['color_name'], (int) $v['stock_quantity']],
+    $t->sql("SELECT v.`size`, v.`color_name`, v.`stock_quantity` FROM `{$seedDb}`.`product_variants` v JOIN `{$seedDb}`.`products` p ON p.id = v.product_id WHERE p.`slug` = ?", 's', [$slug])
+);
+$t->check('a product without variants gets one plain variant, with no stock nobody declared', [['Standard', 'Default', 0]], $plainVariant('sample-vial'));
+$t->check('or the stock its "stock" key gives', [['Standard', 'Default', 15]], $plainVariant('tester-strip'));
 $t->check('the reviews keep the file\'s order, newest first', ['Ada O.', 'Bola A.'], array_column($t->sql("SELECT `author_name` FROM `{$seedDb}`.`reviews` WHERE `product_id` = ? AND `status` = 'approved' ORDER BY `created_at` DESC", 'i', [$oudId]), 'author_name'));
 $t->check('and count towards the rating', 2, (int) $value("SELECT `rating_count` FROM `{$seedDb}`.`products` WHERE `id` = ?", 'i', [$oudId]));
 
@@ -258,5 +274,22 @@ $t->check('and count towards the rating', 2, (int) $value("SELECT `rating_count`
 $t->section('The test fixtures still seed from their own folder');
 $t->ok('the clothing catalogue the suites use lives in tests/fixtures/seeds', is_file(__DIR__ . '/fixtures/seeds/001_demo_seed_data.sql') && is_file(__DIR__ . '/fixtures/seeds/002_catalog_products.sql') && (glob(BASE_PATH . '/seeds/[0-9]*.sql') ?: []) === []);
 $t->ok('and this run was seeded from it', (int) $t->scalar("SELECT COUNT(*) FROM `products` WHERE `slug` = 'gradient-graphic-t-shirt'") === 1 || (int) $t->scalar('SELECT COUNT(*) FROM `products`') > 10);
+
+// -----------------------------------------------------------------------------
+$t->section('A copy with no catalogue and no fixtures says so plainly');
+// A host build leaves the tests out. Stand-in for one: seed.php alone in its own backend folder
+// (its classes still come from this one), with no seeds/demo/catalog.json and no tests/ folder.
+@mkdir("{$tmp}/host/backend/seeds", 0700, true);
+@mkdir("{$tmp}/host/backend/src", 0700, true);
+copy(BASE_PATH . '/seeds/seed.php', "{$tmp}/host/backend/seeds/seed.php");
+file_put_contents("{$tmp}/host/backend/src/autoload.php", '<?php require ' . var_export(BASE_PATH . '/src/autoload.php', true) . ';');
+$proc = proc_open([PHP_BINARY, "{$tmp}/host/backend/seeds/seed.php"], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, "{$tmp}/host", array_merge(getenv(), ['SHOPCO_ENV_FILE' => $envFile]));
+$out = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+fclose($pipes[1]);
+fclose($pipes[2]);
+$code = proc_close($proc);
+$t->ok('it stops, saying there is no demo catalogue to load', $code === 1 && str_contains($out, 'There is no demo catalogue to load') && str_contains($out, 'catalog.example.json'), "code {$code}: {$out}");
+$t->ok('without a "[FATAL] is not a folder" line', !str_contains($out, 'FATAL') && !str_contains($out, 'is not a folder'), $out);
+$t->check('and the database is as it was', 4, $count('products'));
 
 exit($t->finish());

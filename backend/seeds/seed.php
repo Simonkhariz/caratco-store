@@ -44,6 +44,12 @@ $password = Env::get('DB_PASSWORD', '');
 $source = trim((string) ($argv[1] ?? '')) ?: trim((string) Env::get('SEED_PATH', ''));
 if ($source === '') {
     $source = is_file(__DIR__ . '/demo/catalog.json') ? __DIR__ . '/demo/catalog.json' : BASE_PATH . '/tests/fixtures/seeds';
+    // A copy built for a host has neither (the tests are left out): say so plainly.
+    if (!is_file($source) && !glob($source . '/[0-9]*.sql')) {
+        fwrite(STDERR, "There is no demo catalogue to load: backend/seeds/demo/catalog.json does not exist.\n"
+            . "Add one (backend/seeds/demo/catalog.example.json shows the shape), or give a catalogue file: php backend/seeds/seed.php <file.json>\n");
+        exit(1);
+    }
 }
 if (is_dir($source) && !glob(rtrim($source, '/\\') . '/[0-9]*.sql') && is_file(rtrim($source, '/\\') . '/catalog.json')) {
     $source = rtrim($source, '/\\') . '/catalog.json';

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ImageOff, Plus, Share2, Trash2, Upload } from 'lucide-react';
+import { ImageOff, Plus, Share2, Trash2, Upload } from 'lucide-react';
 import {
   AdminProduct,
   PRODUCT_IMAGE_PLACEHOLDER,
@@ -26,7 +26,7 @@ import {
   productExtras,
 } from '@/lib/admin-api';
 import { formatPrice, num } from '@/lib/admin-format';
-import { isNumericSlug, optionPairProblems, slugify, specificationRows, splitUploads, uploadFailureMessage, wholeNumber } from '@/lib/admin-logic';
+import { isNumericSlug, listedChoice, optionPairProblems, slugify, specificationRows, splitUploads, uploadFailureMessage, wholeNumber } from '@/lib/admin-logic';
 import { SHOP, hasOption1, hasOption2, option1Word, option2Word, optionsText, withArticle } from '@/lib/shop';
 import { ShareProductModal, type ShareableProduct } from '@/components/admin/ShareProductModal';
 import { AdminImage } from '@/components/admin/AdminImage';
@@ -65,12 +65,13 @@ const STYLES = SHOP.style.values;
 // Short names, one per choice: the shop's filter lists every distinct name, so "M" and "Medium"
 // would show as two sizes. A product saved with another name keeps it in its own list.
 const OPTION1_CHOICES = SHOP.option1.choices;
-/** The dropdown entry that turns the first option into a text box (never saved as a value). */
-const OTHER_CHOICE = '__other__';
 const OPTION1_PLURAL = SHOP.option1.plural.toLowerCase();
 const OPTION2_PLURAL = SHOP.option2.plural.toLowerCase();
 /** False when the second option is plain text (a scent, a flavour): no colour picker, no swatch column. */
 const SWATCHES = SHOP.option2.swatch;
+/** Shops that sell adult-only goods: the slugs of the categories whose every product needs the age confirmation. */
+const AGE_CHECK = SHOP.features.ageCheck;
+const ADULT_CATEGORIES = new Set(SHOP.ageCheck.categories.map((slug) => slug.trim().toLowerCase()));
 
 const STATUS_LABELS: Record<ProductStatus, { label: string; tone: 'green' | 'amber' | 'neutral' }> = {
   published: { label: 'Published', tone: 'green' },
@@ -84,13 +85,18 @@ interface VariantForm {
   sku: string;
   /** The first option ('' = the product does not use it; the server stores its "none" value). */
   size: string;
-  /** "Other…" was chosen: the first option is typed instead of picked from the list. */
+  /** "Type another" was pressed: the first option is typed instead of picked from the list. */
   size_typed?: boolean;
   color_name: string;
   color_hex: string;
   price_override: string;
   stock_quantity: string;
   low_stock_threshold: string;
+  /**
+   * Set on a new row that took over a variant removed earlier in this edit (see
+   * restoreRemovedVariants): what the row held as a new row, to put back if it stops being that variant.
+   */
+  came_back?: { sku: string; stock_quantity: string; color_hex: string };
 }
 
 interface ImageForm {
@@ -120,6 +126,8 @@ interface ProductForm {
   specifications: ProductSpecification[];
   warranty: string;
   is_heavy: boolean;
+  /** The product's own flag; a product in an adult-only category needs the confirmation without it. */
+  is_age_restricted: boolean;
 }
 
 /** 'YYYY-MM-DD HH:MM:SS' (server) → 'YYYY-MM-DDTHH:MM' (datetime-local input). */
@@ -170,6 +178,7 @@ const EMPTY_FORM: ProductForm = {
   specifications: SHOP.specs.suggested.slice(0, MAX_SPECIFICATIONS).map((name) => ({ name, value: '' })),
   warranty: '',
   is_heavy: false,
+  is_age_restricted: false,
 };
 
 function productToForm(p: AdminProduct): ProductForm {
@@ -214,6 +223,7 @@ function productToForm(p: AdminProduct): ProductForm {
     })),
     warranty: extras.warranty ?? '',
     is_heavy: Boolean(extras.is_heavy),
+    is_age_restricted: Boolean(extras.is_age_restricted),
   };
 }
 
@@ -225,11 +235,68 @@ const SHOWN_ERROR_FIELDS = new Set([
   ...(SHOP.style.enabled ? ['dress_style'] : []),
   ...(SHOP.features.warranty ? ['warranty'] : []),
   ...(SHOP.features.heavyDelivery ? ['is_heavy'] : []),
+  ...(AGE_CHECK ? ['is_age_restricted'] : []),
 ]);
 
+/** The first option as it is saved: a typed value that is one of the shop's choices takes the list's spelling. */
+function savedOption1(v: VariantForm): string {
+  return v.size_typed ? (listedChoice(v.size, OPTION1_CHOICES) ?? v.size.trim()) : v.size.trim();
+}
+
+/** A row's two options as they are compared and saved ('' = the product does not use that option). */
+function optionPair(v: VariantForm): [string, string] {
+  return [hasOption1(v.size) ? savedOption1(v) : '', hasOption2(v.color_name) ? v.color_name.trim() : ''];
+}
+
+/** Two rows with the same key are the same variant (the rule the duplicate check uses). */
+function optionPairKey(v: VariantForm): string {
+  return optionPair(v).join('|').toLowerCase();
+}
+
 /**
- * The first option of one variant: the shop's list of choices, with "Other…" for a value that is
- * not in it, or simply a text box when the shop has no list.
+ * A variant removed in this edit and then added again is the same variant coming back: the server
+ * keeps its stock, so asking for a starting stock would mislead. A new row whose options match a
+ * removed row takes that row's id, SKU and stock, and is saved as the old variant. When its options
+ * are changed to something else it is a new row again, with what it held before.
+ */
+function restoreRemovedVariants(variants: VariantForm[], removed: VariantForm[]): VariantForm[] {
+  if (removed.length === 0) return variants;
+  const rows = variants.map((v) => {
+    const source = v.came_back ? removed.find((r) => r.id === v.id) : undefined;
+    if (!v.came_back || (source && optionPairKey(source) === optionPairKey(v))) return v;
+    const fresh: VariantForm = { ...v, sku: v.came_back.sku, stock_quantity: v.came_back.stock_quantity, color_hex: v.came_back.color_hex };
+    delete fresh.id;
+    delete fresh.came_back;
+    return fresh;
+  });
+  const taken = new Set(rows.map((v) => v.id));
+  return rows.map((v) => {
+    const key = optionPairKey(v);
+    // A row with neither option is never matched: every new row starts that way.
+    if (v.id !== undefined || key === '|') return v;
+    const source = removed.find((r) => !taken.has(r.id) && optionPairKey(r) === key);
+    if (!source) return v;
+    taken.add(source.id);
+    return {
+      ...v,
+      id: source.id,
+      sku: source.sku,
+      stock_quantity: source.stock_quantity,
+      // Without swatches there is no colour picker, so the variant keeps the colour it had.
+      color_hex: SWATCHES ? v.color_hex : source.color_hex,
+      came_back: { sku: v.sku, stock_quantity: v.stock_quantity, color_hex: v.color_hex },
+    };
+  });
+}
+
+/** The small text button under the first option that swaps its list for a text box, or back. */
+const OPTION1_SWITCH =
+  'self-start rounded text-xs font-medium text-[#6b7280] underline outline-none hover:text-[#111827] focus-visible:ring-[3px] focus-visible:ring-[#9ca3af]/40 disabled:no-underline disabled:opacity-60';
+
+/**
+ * The first option of one variant: the shop's list of choices with a "Type another" button for a
+ * value that is not in it, or simply a text box when the shop has no list. The switch is a button
+ * of its own, never an entry of the list: arrowing through a closed list picks each entry in turn.
  */
 function Option1Field({
   label,
@@ -246,67 +313,103 @@ function Option1Field({
   onChange: (changes: Pick<VariantForm, 'size' | 'size_typed'>) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  // Set when "Other…" is picked, so the text box that replaces the list is ready to type in.
-  const focusTextBox = useRef(false);
+  const selectRef = useRef<HTMLSelectElement>(null);
+  // Set by the two switch buttons: the control that replaces the other one takes the keyboard focus.
+  const focusAfterSwitch = useRef(false);
   useEffect(() => {
-    if (typed && focusTextBox.current) inputRef.current?.focus();
-    focusTextBox.current = false;
+    if (!focusAfterSwitch.current) return;
+    focusAfterSwitch.current = false;
+    if (typed) {
+      inputRef.current?.focus();
+      // The value comes along, selected, so typing replaces it.
+      inputRef.current?.select();
+    } else {
+      selectRef.current?.focus();
+    }
   }, [typed]);
 
-  if (typed || OPTION1_CHOICES.length === 0) {
-    const input = (
+  if (OPTION1_CHOICES.length === 0) {
+    return (
       <input
-        ref={inputRef}
         aria-label={`${label} ${option1Word}`}
         maxLength={50}
         value={value}
         onChange={(e) => onChange({ size: e.target.value })}
-        className={`${inputClass} h-9 w-full py-1 lg:h-8 ${typed ? 'pr-8' : ''}`}
+        className={`${inputClass} h-9 w-full py-1 lg:h-8`}
         aria-invalid={invalid ? true : undefined}
       />
     );
-    if (!typed) return input;
+  }
+
+  if (typed) {
+    const listed = listedChoice(value, OPTION1_CHOICES);
+    // The list can only show one of its own choices (or nothing), so any other text stays in the box.
+    const canUseList = value.trim() === '' || listed !== null;
     return (
-      <span className="relative block">
-        {input}
+      <>
+        <input
+          ref={inputRef}
+          aria-label={`${label} ${option1Word}`}
+          maxLength={50}
+          value={value}
+          onChange={(e) => onChange({ size: e.target.value })}
+          onBlur={() => {
+            if (listed !== null && listed !== value) onChange({ size: listed });
+          }}
+          className={`${inputClass} h-9 w-full py-1 lg:h-8`}
+          aria-invalid={invalid ? true : undefined}
+        />
         <button
           type="button"
+          disabled={!canUseList}
           onClick={() => {
-            // Back to the list: a typed value that is one of the choices takes the list's spelling.
-            const listed = OPTION1_CHOICES.find((c) => c.toLowerCase() === value.trim().toLowerCase());
-            onChange({ size: listed ?? value.trim(), size_typed: undefined });
+            focusAfterSwitch.current = true;
+            onChange({ size: listed ?? '', size_typed: undefined });
           }}
-          aria-label={`${label}: choose ${withArticle(option1Word)} from the list`}
-          title="Choose from the list"
-          className="absolute inset-y-0 right-0 flex w-8 items-center justify-center rounded-r-lg text-[#6b7280] outline-none hover:text-[#111827] focus-visible:ring-[3px] focus-visible:ring-[#9ca3af]/40"
+          aria-label={
+            canUseList
+              ? `${label}: choose ${withArticle(option1Word)} from the list`
+              : `${label}: clear the box to choose ${withArticle(option1Word)} from the list`
+          }
+          title={canUseList ? undefined : 'Clear the box to choose from the list'}
+          className={OPTION1_SWITCH}
         >
-          <ChevronDown className="size-4" aria-hidden="true" />
+          Choose from the list
         </button>
-      </span>
+      </>
     );
   }
 
   const choices = value && !OPTION1_CHOICES.includes(value) ? [...OPTION1_CHOICES, value] : OPTION1_CHOICES;
   return (
-    <select
-      aria-label={`${label} ${option1Word}`}
-      value={value}
-      onChange={(e) => {
-        const other = e.target.value === OTHER_CHOICE;
-        focusTextBox.current = other;
-        onChange(other ? { size: '', size_typed: true } : { size: e.target.value });
-      }}
-      className={`${inputClass} h-9 w-full !py-0 pr-7 lg:h-8`}
-      aria-invalid={invalid ? true : undefined}
-    >
-      <option value="">Choose…</option>
-      {choices.map((s) => (
-        <option key={s} value={s}>
-          {s}
-        </option>
-      ))}
-      <option value={OTHER_CHOICE}>Other…</option>
-    </select>
+    <>
+      <select
+        ref={selectRef}
+        aria-label={`${label} ${option1Word}`}
+        value={value}
+        onChange={(e) => onChange({ size: e.target.value })}
+        className={`${inputClass} h-9 w-full !py-0 pr-7 lg:h-8`}
+        aria-invalid={invalid ? true : undefined}
+      >
+        <option value="">Choose…</option>
+        {choices.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => {
+          focusAfterSwitch.current = true;
+          onChange({ size: value, size_typed: true });
+        }}
+        aria-label={`${label}: type another ${option1Word}`}
+        className={OPTION1_SWITCH}
+      >
+        Type another
+      </button>
+    </>
   );
 }
 
@@ -372,6 +475,9 @@ export function ProductManagement() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const editingProduct = editingId ? products.find((p) => p.id === editingId) : undefined;
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
+  // Every product in one of the shop's adult-only categories needs the age confirmation, whatever its own flag says.
+  const adultCategory =
+    AGE_CHECK && ADULT_CATEGORIES.has((categories.find((c) => String(c.id) === form.category_id)?.slug ?? '').trim().toLowerCase());
   const closeEditor = useDiscardGuard(editorOpen, form, () => setEditorOpen(false));
   const [slugTouched, setSlugTouched] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -383,12 +489,21 @@ export function ProductManagement() {
   // Counts each opening of the editor, so a late upload can't land in a different product's form.
   const editorOpening = useRef(0);
   // The newer fields the product being edited came without (see the save: they are not sent empty).
-  const unreadFields = useRef({ specifications: false, warranty: false, is_heavy: false });
+  const unreadFields = useRef({ specifications: false, warranty: false, is_heavy: false, is_age_restricted: false });
 
   const update = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 
+  // The existing variants removed since the editor opened (a new row with the same options is that variant again).
+  const [removedVariants, setRemovedVariants] = useState<VariantForm[]>([]);
+
   const updateVariant = (index: number, changes: Partial<VariantForm>) =>
-    setForm((f) => ({ ...f, variants: f.variants.map((v, i) => (i === index ? { ...v, ...changes } : v)) }));
+    setForm((f) => ({
+      ...f,
+      variants: restoreRemovedVariants(
+        f.variants.map((v, i) => (i === index ? { ...v, ...changes } : v)),
+        removedVariants
+      ),
+    }));
 
   const openCreate = () => {
     editorOpening.current += 1;
@@ -398,6 +513,7 @@ export function ProductManagement() {
     setErrors({});
     setFormError(null);
     setNewImageUrl('');
+    setRemovedVariants([]);
     setEditorOpen(true);
   };
 
@@ -410,11 +526,13 @@ export function ProductManagement() {
       specifications: !Array.isArray(extras.specifications),
       warranty: extras.warranty === undefined,
       is_heavy: extras.is_heavy === undefined,
+      is_age_restricted: extras.is_age_restricted === undefined,
     };
     setSlugTouched(true);
     setErrors({});
     setFormError(null);
     setNewImageUrl('');
+    setRemovedVariants([]);
     setEditorOpen(true);
   };
 
@@ -480,7 +598,13 @@ export function ProductManagement() {
       });
       if (!ok) return;
     }
-    setForm((f) => ({ ...f, variants: f.variants.filter((_, i) => i !== index) }));
+    // Remembered without the note a row carries when it had itself come back.
+    const gone: VariantForm = { ...v };
+    delete gone.came_back;
+    const removed = v.id ? [...removedVariants.filter((r) => r.id !== v.id), gone] : removedVariants;
+    setRemovedVariants(removed);
+    // Another new row may already hold the same options as the row that just went.
+    setForm((f) => ({ ...f, variants: restoreRemovedVariants(f.variants.filter((_, i) => i !== index), removed) }));
   };
 
   const validate = (): Record<string, string> => {
@@ -500,7 +624,7 @@ export function ProductManagement() {
     if (form.variants.length === 0) e.variants = `Add at least one ${option1Word} and ${option2Word}.`;
     // An option may be left empty (the product does not use it). Typing the "none" word means the same.
     const problems = optionPairProblems(
-      form.variants.map((v) => [hasOption1(v.size) ? v.size.trim() : '', hasOption2(v.color_name) ? v.color_name.trim() : ''])
+      form.variants.map(optionPair)
     );
     form.variants.forEach((v, i) => {
       if (problems[i] === 'empty') {
@@ -564,15 +688,19 @@ export function ProductManagement() {
         ...(v.id ? { id: v.id } : { stock_quantity: wholeNumber(v.stock_quantity) ?? 0 }),
         sku: v.sku.trim(),
         // Empty = the product does not use this option; the server stores its "none" value.
-        size: v.size.trim(),
+        size: savedOption1(v),
         color_name: v.color_name.trim(),
-        color_hex: SWATCHES ? v.color_hex : '#000000',
+        // A shop without swatches has no colour picker: a new row gets black, and a row that
+        // already exists keeps the colour it was loaded with.
+        color_hex: SWATCHES || v.id ? v.color_hex : '#000000',
         price_override: v.price_override.trim() ? Number(v.price_override) : null,
         low_stock_threshold: wholeNumber(v.low_stock_threshold) ?? 0,
       })),
       ...(send('specifications', specifications.length > 0) ? { specifications } : {}),
       ...(SHOP.features.warranty && send('warranty', warranty !== '') ? { warranty } : {}),
       ...(SHOP.features.heavyDelivery && send('is_heavy', form.is_heavy) ? { is_heavy: form.is_heavy } : {}),
+      // In an adult-only category the box is locked on, so the product's own flag is not touched.
+      ...(AGE_CHECK && !adultCategory && send('is_age_restricted', form.is_age_restricted) ? { is_age_restricted: form.is_age_restricted } : {}),
     };
 
     setSaving(true);
@@ -954,6 +1082,22 @@ export function ProductManagement() {
                   {errors.is_heavy && <p className="text-xs text-red-600">{errors.is_heavy}</p>}
                 </>
               )}
+              {AGE_CHECK && (
+                <>
+                  <Checkbox
+                    label={`Only for buyers aged ${SHOP.ageCheck.minAge} and over`}
+                    hint={
+                      adultCategory
+                        ? 'Every product in this category is for adults only.'
+                        : 'Tick this for a product outside your adult-only categories that still needs the age confirmation at checkout, such as a hamper with wine.'
+                    }
+                    checked={adultCategory || form.is_age_restricted}
+                    disabled={adultCategory}
+                    onChange={(v) => update('is_age_restricted', v)}
+                  />
+                  {errors.is_age_restricted && <p className="text-xs text-red-600">{errors.is_age_restricted}</p>}
+                </>
+              )}
             </div>
             {form.is_flash_deal && (
               <Field
@@ -1129,13 +1273,15 @@ export function ProductManagement() {
                     </button>
                   );
                   return (
-                    <li key={v.id ?? `new-${idx}`} className="border-t border-[#f3f4f6] p-3 first:border-t-0 lg:px-2 lg:py-2">
+                    // A new row that became a removed variant again keeps its key, so the box being typed in stays put.
+                    <li key={v.came_back || !v.id ? `new-${idx}` : v.id} className="border-t border-[#f3f4f6] p-3 first:border-t-0 lg:px-2 lg:py-2">
                       <div className="mb-2 flex items-center justify-between lg:hidden">
                         <span className="text-[13px] font-semibold text-[#111827]">{label}</span>
                         {removeButton}
                       </div>
-                      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:items-center lg:gap-2 ${VARIANT_GRID}`}>
-                        {/* Not a <label>: in its text-box form this field also holds the "back to the list" button. */}
+                      {/* Top-aligned on wide screens: the first option has a small button under its box. */}
+                      <div className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:items-start lg:gap-2 ${VARIANT_GRID}`}>
+                        {/* Not a <label>: this field also holds the button that swaps the list and the text box. */}
                         <div className={VARIANT_FIELD}>
                           <span className={VARIANT_LABEL}>{SHOP.option1.label}</span>
                           <Option1Field
@@ -1229,7 +1375,7 @@ export function ProductManagement() {
                             className={`${inputClass} h-9 w-full py-1 lg:h-8`}
                           />
                         </label>
-                        <div className="hidden justify-end lg:flex">{removeButton}</div>
+                        <div className="hidden justify-end lg:flex lg:h-8 lg:items-center">{removeButton}</div>
                       </div>
                       {rowError && <p className="mt-2 text-xs text-red-600">{rowError}</p>}
                     </li>

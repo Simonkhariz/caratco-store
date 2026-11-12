@@ -76,7 +76,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => {
 
               {/* Top Floating Badge */}
               <div className="relative z-10 self-end" aria-hidden="true">
-                <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-black group-hover:bg-accent group-hover:text-white transition-colors shadow-sm">
+                <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-black group-hover:bg-accent group-hover:text-accent-ink transition-colors shadow-sm">
                   <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} />
                 </div>
               </div>

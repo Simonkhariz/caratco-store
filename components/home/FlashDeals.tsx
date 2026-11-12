@@ -109,7 +109,7 @@ export const FlashDeals: React.FC<FlashDealsProps> = ({ products, endsAt, onExpi
                   units.map((unit, idx) => (
                     <React.Fragment key={unit.label}>
                       {idx > 0 && <span className="text-black font-bold">:</span>}
-                      <span className="bg-accent text-white px-2.5 py-1 rounded-lg" title={unit.label}>
+                      <span className="bg-accent text-accent-ink px-2.5 py-1 rounded-lg" title={unit.label}>
                         {unit.label === 'days' ? `${unit.value}d` : String(unit.value).padStart(2, '0')}
                       </span>
                     </React.Fragment>
@@ -131,7 +131,7 @@ export const FlashDeals: React.FC<FlashDealsProps> = ({ products, endsAt, onExpi
         <div className="mt-10 text-center">
           <Link
             href="/category?flash=true"
-            className="inline-flex items-center gap-2 bg-accent text-white hover:bg-accent-hover font-semibold px-10 py-3.5 rounded-full transition-colors text-sm shadow-md"
+            className="inline-flex items-center gap-2 bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-10 py-3.5 rounded-full transition-colors text-sm shadow-md"
           >
             <span>View all deals</span>
             <HugeiconsIcon icon={ArrowRight01Icon} size={16} aria-hidden="true" />

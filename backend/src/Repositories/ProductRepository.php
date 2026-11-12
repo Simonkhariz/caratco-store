@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Config\Shop;
 use App\Support\Input;
 use App\Support\ProductRatings;
+use App\Support\ValidationFailed;
 use App\Database\Database;
 
 class ProductRepository
@@ -119,14 +120,32 @@ class ProductRepository
             // flavour or a type filters on the exact name instead ("rose" must not find "Rosewood").
             $byFamily = Shop::option2IsColour();
 
+            $wantedColors = array_values(array_unique(array_filter(
+                array_map(static fn ($col): string => mb_strtolower(Input::text($col)), $rawColors),
+                static fn (string $col): bool => $col !== ''
+            )));
+
+            // The filter sends the real names it listed ("Gold"), and those must match exactly:
+            // a "contains" match would put every "Rose Gold" piece under Gold. So a name some
+            // variant really has is matched exactly, and the family words are kept for a name
+            // nothing has ("?color=black" typed by hand still finds Onyx and Charcoal).
+            $realNames = [];
+            if ($byFamily && $wantedColors !== []) {
+                $realNames = array_flip(array_column($this->db->fetchAll(
+                    "SELECT DISTINCT LOWER(color_name) AS name FROM product_variants
+                     WHERE is_active = 1 AND LOWER(color_name) IN (" . implode(',', array_fill(0, count($wantedColors), '?')) . ")",
+                    str_repeat('s', count($wantedColors)),
+                    $wantedColors
+                ), 'name'));
+            }
+
             $colorConditions = [];
-            foreach ($rawColors as $col) {
-                $trimmed = mb_strtolower(Input::text($col));
-                if ($trimmed !== '' && !$byFamily) {
+            foreach ($wantedColors as $trimmed) {
+                if (!$byFamily || isset($realNames[$trimmed])) {
                     $colorConditions[] = "LOWER(pv_c.color_name) = ?";
                     $params[] = $trimmed;
                     $types .= "s";
-                } elseif ($trimmed !== '') {
+                } else {
                     $familyWords = $colorFamilies[$trimmed] ?? [$trimmed];
                     $subConditions = [];
                     foreach ($familyWords as $word) {
@@ -235,7 +254,7 @@ class ProductRepository
         $itemsSql = "SELECT p.id, p.uuid, p.name, p.slug, p.description, p.product_type,
                             p.base_price, p.original_price, p.currency, p.sku,
                             p.rating_avg, p.rating_count, p.is_featured, p.is_flash_deal, p.flash_deal_ends_at, p.dress_style,
-                            p.created_at,
+                            p.is_age_restricted, p.created_at,
                             c.id AS category_id, c.name AS category_name, c.slug AS category_slug,
                             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.display_order ASC LIMIT 1) AS primary_image,
                             (SELECT COALESCE(SUM(pv.stock_quantity), 0) FROM product_variants pv WHERE pv.product_id = p.id AND pv.is_active = 1) AS total_stock
@@ -308,7 +327,9 @@ class ProductRepository
                 $row['in_stock'] = $row['total_stock'] > 0;
                 $row['available_colors'] = isset($colorsByProduct[$pid]) ? array_values($colorsByProduct[$pid]) : [];
                 $row['available_sizes'] = isset($sizesByProduct[$pid]) ? $sizesByProduct[$pid] : [];
-                $row['age_restricted'] = Shop::isAgeRestricted($row['category_slug'] ?? null);
+                // Lists say only the answer (by category or by the product's own mark), not how it was reached.
+                $row['age_restricted'] = Shop::isAgeRestricted($row['category_slug'] ?? null, (int) ($row['is_age_restricted'] ?? 0) === 1);
+                unset($row['is_age_restricted']);
 
                 // Calculate discount percentage if original price is set
                 if ($row['original_price'] && $row['original_price'] > $row['base_price']) {
@@ -436,7 +457,11 @@ class ProductRepository
         $product['specifications'] = self::specificationRows($product['specifications'] ?? null);
         $product['warranty'] = Input::text($product['warranty'] ?? null) !== '' ? Input::text($product['warranty']) : null;
         $product['is_heavy'] = (bool) ($product['is_heavy'] ?? false);
-        $product['age_restricted'] = Shop::isAgeRestricted($product['category_slug'] ?? null);
+        // The product's own mark, and the answer: marked, or in a category for adults only.
+        $product['is_age_restricted'] = (bool) ($product['is_age_restricted'] ?? false);
+        $product['age_restricted'] = Shop::isAgeRestricted($product['category_slug'] ?? null, $product['is_age_restricted']);
+        // Only App\Services\ProductSales reads the starting count; units_sold already includes it.
+        unset($product['units_sold_start']);
         $product['images'] = $images;
         $product['variants'] = $variants;
         $product['available_colors'] = array_values($colors);
@@ -790,7 +815,7 @@ class ProductRepository
         $itemsSql = "SELECT p.id, p.uuid, p.name, p.slug, p.description, p.product_type,
                             p.status, p.base_price, p.original_price, p.currency, p.sku,
                             p.rating_avg, p.rating_count, p.rating_start, p.review_avg, p.is_featured, p.is_flash_deal, p.flash_deal_ends_at, p.dress_style,
-                            p.specifications, p.warranty, p.is_heavy,
+                            p.specifications, p.warranty, p.is_heavy, p.is_age_restricted,
                             p.created_at, p.updated_at,
                             c.id AS category_id, c.name AS category_name, c.slug AS category_slug,
                             (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.is_primary DESC, pi.display_order ASC LIMIT 1) AS primary_image,
@@ -823,7 +848,8 @@ class ProductRepository
             $row['specifications'] = self::specificationRows($row['specifications']);
             $row['warranty'] = Input::text($row['warranty']) !== '' ? Input::text($row['warranty']) : null;
             $row['is_heavy'] = (bool) $row['is_heavy'];
-            $row['age_restricted'] = Shop::isAgeRestricted($row['category_slug'] ?? null);
+            $row['is_age_restricted'] = (bool) $row['is_age_restricted'];
+            $row['age_restricted'] = Shop::isAgeRestricted($row['category_slug'] ?? null, $row['is_age_restricted']);
 
             // Variants
             $variants = $this->db->fetchAll(
@@ -1024,17 +1050,73 @@ class ProductRepository
     }
 
     /**
-     * Auto-generate a readable variant SKU based on master SKU, color, and size.
+     * A readable variant SKU: the product's SKU, then three letters for each option the product
+     * really uses, second option first ("TEE-AB12-BLA-M"). An option the product does not use
+     * (stored as the shop's "none" word) adds nothing, and a product with neither gets "-STD".
+     *
+     * Short forms repeat ("Pack of 3" and "Pack of 6" are both PAC), so this is only where a SKU
+     * starts: uniqueVariantSku() is what create, syncVariants and the seeder save.
      */
     public static function generateVariantSku(string $masterSku, string $color, string $size, int $index = 1): string
     {
-        $colorPart = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $color), 0, 3));
-        if ($colorPart === '') $colorPart = 'DEF';
+        $short = static function (string $value) use ($index): string {
+            $letters = strtoupper(substr((string) preg_replace('/[^a-zA-Z0-9]/', '', $value), 0, 3));
+            return $letters !== '' ? $letters : (string) $index; // e.g. a name with no Latin letters
+        };
+        $parts = [];
+        if (Shop::usesOption2($color)) {
+            $parts[] = $short($color);
+        }
+        if (Shop::usesOption1($size)) {
+            $parts[] = $short($size);
+        }
+        $ending = '-' . ($parts !== [] ? implode('-', $parts) : 'STD');
+        // The column holds 100 characters: a very long product SKU gives way, and leaves room for "-99".
+        return substr($masterSku, 0, 96 - strlen($ending)) . $ending;
+    }
 
-        $sizePart = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $size), 0, 3));
-        if ($sizePart === '') $sizePart = (string) $index;
+    /**
+     * The SKU a variant is saved with when none was typed: generateVariantSku(), made unique by
+     * adding -2, -3 and so on until no other row of this save ($taken, lower case, added to) and
+     * no variant in the shop has it. Archived variants count: they keep their SKU.
+     *
+     * @param array<string, true> $taken
+     */
+    public static function uniqueVariantSku(Database $db, string $masterSku, string $color, string $size, int $index, array &$taken): string
+    {
+        $stem = self::generateVariantSku($masterSku, $color, $size, $index);
+        $sku = $stem;
+        for ($copy = 2; isset($taken[mb_strtolower($sku)]) || $db->fetchOne("SELECT `id` FROM `product_variants` WHERE `sku` = ? LIMIT 1", 's', [$sku]) !== null; $copy++) {
+            $sku = "{$stem}-{$copy}";
+        }
+        $taken[mb_strtolower($sku)] = true;
+        return $sku;
+    }
 
-        return sprintf('%s-%s-%s', $masterSku, $colorPart, $sizePart);
+    /**
+     * A SKU typed by hand has to be free: not used by another row of this save, by another variant
+     * of this product (archived ones too) or by any other product's variant. Refused against the
+     * row it was typed on, so the admin sees which one to change.
+     *
+     * @param int $row the row's place in the form, from 1
+     * @param int $variantId the variant this row updates (0 for a new one): its own SKU is not a clash
+     * @param array<string, true> $taken
+     * @throws ValidationFailed
+     */
+    private static function claimTypedSku(Database $db, string $sku, int $row, int $productId, int $variantId, array &$taken): void
+    {
+        $owner = $db->fetchOne("SELECT `product_id` FROM `product_variants` WHERE `sku` = ? AND `id` <> ? LIMIT 1", 'si', [$sku, $variantId]);
+        $clash = null;
+        if (isset($taken[mb_strtolower($sku)]) || ($owner !== null && (int) $owner['product_id'] === $productId)) {
+            $clash = 'another variant of this product already uses';
+        } elseif ($owner !== null) {
+            $clash = 'another product already uses';
+        }
+        if ($clash !== null) {
+            $message = "Variant {$row}: {$clash} the SKU {$sku}.";
+            throw new ValidationFailed($message, ['variants' => $message]);
+        }
+        $taken[mb_strtolower($sku)] = true;
     }
 
     /**
@@ -1055,12 +1137,12 @@ class ProductRepository
             // Auto-generate SKU if omitted or empty
             $masterSku = !empty($data['sku']) ? trim((string) $data['sku']) : self::generateSku($data);
 
-            $sql = "INSERT INTO products (uuid, category_id, name, slug, description, product_type, status, base_price, original_price, currency, sku, dress_style, is_featured, is_flash_deal, flash_deal_ends_at, rating_start, specifications, warranty, is_heavy)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO products (uuid, category_id, name, slug, description, product_type, status, base_price, original_price, currency, sku, dress_style, is_featured, is_flash_deal, flash_deal_ends_at, rating_start, specifications, warranty, is_heavy, is_age_restricted)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $productId = (int) $db->insert(
                 $sql,
-                "sisssssddsssiisdssi",
+                "sisssssddsssiisdssii",
                 [
                     $uuid,
                     empty($data['category_id']) ? null : (int) $data['category_id'],
@@ -1073,9 +1155,9 @@ class ProductRepository
                     $data['original_price'] ?? null,
                     $data['currency'] ?? 'NGN',
                     $masterSku,
-                    // The editor's "Not set" sends null: store '' like an edit does. Callers that leave
-                    // the field out get the column's usual 'Casual'.
-                    array_key_exists('dress_style', $data) ? trim((string) ($data['dress_style'] ?? '')) : 'Casual',
+                    // No style given (the editor's "Not set", or the key left out) is stored as '', like an
+                    // edit does: "Casual" means nothing in a shop that sells perfume or fridges.
+                    trim((string) ($data['dress_style'] ?? '')),
                     $data['is_featured'] ?? 0,
                     $data['is_flash_deal'] ?? 0,
                     self::flashEnd($data, null),
@@ -1083,17 +1165,27 @@ class ProductRepository
                     self::specificationsJson($data['specifications'] ?? null),
                     self::warranty($data['warranty'] ?? null),
                     self::flag($data['is_heavy'] ?? false),
+                    self::flag($data['is_age_restricted'] ?? false),
                 ]
             );
 
-            // Insert variants
+            // Insert variants. SKUs typed by hand are claimed first, so a generated one never takes
+            // a SKU that a later row of the same form asks for by name.
+            $takenSkus = [];
+            $variants = array_values($variants);
+            foreach ($variants as $idx => $v) {
+                $typed = Input::text($v['sku'] ?? null);
+                if ($typed !== '') {
+                    self::claimTypedSku($db, $typed, $idx + 1, $productId, 0, $takenSkus);
+                }
+            }
             if (!empty($variants)) {
                 foreach ($variants as $idx => $v) {
                     // An option left empty is stored as the shop's "none" word; a missing colour code as black.
                     $v = self::variantOptions($v) + $v;
-                    $variantSku = !empty($v['sku'])
-                        ? trim((string) $v['sku'])
-                        : self::generateVariantSku($masterSku, $v['color_name'], $v['size'], $idx + 1);
+                    $variantSku = Input::text($v['sku'] ?? null) !== ''
+                        ? Input::text($v['sku'])
+                        : self::uniqueVariantSku($db, $masterSku, $v['color_name'], $v['size'], $idx + 1, $takenSkus);
 
                     $db->execute(
                         "INSERT INTO product_variants (product_id, sku, size, color_name, color_hex, price_override, stock_quantity, low_stock_threshold)
@@ -1118,7 +1210,7 @@ class ProductRepository
                     "issssdii",
                     [
                         $productId,
-                        $masterSku . '-STD',
+                        self::uniqueVariantSku($db, $masterSku, Shop::option2None(), Shop::option1None(), 1, $takenSkus),
                         Shop::option1None(),
                         Shop::option2None(),
                         '#000000',
@@ -1168,7 +1260,7 @@ class ProductRepository
                     SET category_id = ?, name = ?, slug = ?, sku = ?, description = ?, status = ?,
                         product_type = ?, base_price = ?, original_price = ?, dress_style = ?,
                         is_featured = ?, is_flash_deal = ?, flash_deal_ends_at = ?, rating_start = ?,
-                        specifications = ?, warranty = ?, is_heavy = ?
+                        specifications = ?, warranty = ?, is_heavy = ?, is_age_restricted = ?
                     WHERE id = ?";
 
             // Fields the editor can clear (no "was" price, no category, no style) arrive as null:
@@ -1181,7 +1273,7 @@ class ProductRepository
 
             $db->execute(
                 $sql,
-                "issssssddsiisdssii",
+                "issssssddsiisdssiii",
                 [
                     $categoryId === null || $categoryId === '' || (int) $categoryId <= 0 ? null : (int) $categoryId,
                     $data['name'] ?? $existing['name'],
@@ -1202,6 +1294,7 @@ class ProductRepository
                     self::specificationsJson($clearable('specifications')),
                     self::warranty($clearable('warranty')),
                     self::flag(array_key_exists('is_heavy', $data) ? $data['is_heavy'] : ($existing['is_heavy'] ?? false)),
+                    self::flag(array_key_exists('is_age_restricted', $data) ? $data['is_age_restricted'] : ($existing['is_age_restricted'] ?? false)),
                     $id,
                 ]
             );
@@ -1244,9 +1337,13 @@ class ProductRepository
      * - Existing variants (matched by id, or by size + colour) are updated in place.
      * - Stock on an existing variant changes only if the form's `original_stock_quantity`
      *   still matches the database; otherwise orders arrived meanwhile and the edit is refused
-     *   rather than silently overwriting reserved stock. A variant the form adds again (archived,
-     *   or a row with no id) has no stock on the form to compare: its stock is simply set.
-     *   Every stock change is logged.
+     *   rather than silently overwriting reserved stock. An archived variant the form adds back
+     *   has no stock on the form to compare: its stock is simply set. Every stock change is logged.
+     * - A row with no id whose options match a variant that is still active is that variant, removed
+     *   and typed in again within one edit. The form sends such a row as new, with stock 0, so its
+     *   stock is left exactly as it is.
+     * - A variant without a typed SKU gets a generated one that no other variant has; a typed SKU
+     *   that is already in use is refused against its row (ValidationFailed).
      * - Variants removed from the form are archived if anything references them, else deleted.
      */
     private function syncVariants(Database $db, int $productId, string $masterSku, array $variants): void
@@ -1265,6 +1362,17 @@ class ProductRepository
             $byOptions[strtolower(Input::text($row['size'] ?? null)) . '|' . strtolower(Input::text($row['color_name'] ?? null))] = $row;
         }
 
+        // SKUs typed anywhere in the form are kept free for their rows: a generated SKU avoids them.
+        $variants = array_values($variants);
+        $typedSkus = [];
+        foreach ($variants as $v) {
+            $typed = mb_strtolower(Input::text($v['sku'] ?? null));
+            if ($typed !== '') {
+                $typedSkus[$typed] = true;
+            }
+        }
+        $takenSkus = [];
+
         $keptIds = [];
         foreach ($variants as $index => $v) {
             // An option left empty means the product does not use it: stored as the shop's "none" word.
@@ -1279,7 +1387,9 @@ class ProductRepository
 
             if ($current !== null) {
                 $vid = (int) $current['id'];
-                $revived = !$matchedById || (int) $current['is_active'] === 0;
+                $revived = (int) $current['is_active'] === 0;
+                // Removed and typed in again in one edit: the same live variant, whose stock stays.
+                $keepsStock = !$matchedById && !$revived;
                 if (in_array($vid, $keptIds, true)) {
                     // Named by what the admin typed, never by the "none" word.
                     $named = Shop::optionsText($size, $colorName);
@@ -1287,7 +1397,11 @@ class ProductRepository
                         ? "Duplicate variant {$named} in the form."
                         : 'Only one variant can be without ' . Shop::withArticle(Shop::option1Word()) . ' and ' . Shop::withArticle(Shop::option2Word()) . '.');
                 }
-                $sku = trim((string) ($v['sku'] ?? '')) ?: $current['sku'];
+                $sku = Input::text($v['sku'] ?? null) ?: (string) $current['sku'];
+                if (mb_strtolower($sku) !== mb_strtolower((string) $current['sku'])) {
+                    self::claimTypedSku($db, $sku, $index + 1, $productId, $vid, $takenSkus);
+                }
+                $takenSkus[mb_strtolower($sku)] = true;
 
                 $db->execute(
                     "UPDATE product_variants
@@ -1297,7 +1411,7 @@ class ProductRepository
                     [$sku, $size, $colorName, $colorHex, $priceOverride, $threshold, $vid, $productId]
                 );
 
-                if (array_key_exists('stock_quantity', $v) && (int) $v['stock_quantity'] !== (int) $current['stock_quantity']) {
+                if (!$keepsStock && array_key_exists('stock_quantity', $v) && (int) $v['stock_quantity'] !== (int) $current['stock_quantity']) {
                     $newStock = (int) $v['stock_quantity'];
                     $expected = isset($v['original_stock_quantity']) ? (int) $v['original_stock_quantity'] : null;
                     if ($newStock < 0) {
@@ -1317,7 +1431,14 @@ class ProductRepository
                     );
                 }
             } else {
-                $sku = trim((string) ($v['sku'] ?? '')) ?: self::generateVariantSku($masterSku, $colorName, $size, $index + 1);
+                $sku = Input::text($v['sku'] ?? null);
+                if ($sku !== '') {
+                    self::claimTypedSku($db, $sku, $index + 1, $productId, 0, $takenSkus);
+                } else {
+                    $avoid = $takenSkus + $typedSkus;
+                    $sku = self::uniqueVariantSku($db, $masterSku, $colorName, $size, $index + 1, $avoid);
+                    $takenSkus[mb_strtolower($sku)] = true;
+                }
                 $initialStock = max(0, (int) ($v['stock_quantity'] ?? 0));
                 $vid = (int) $db->insert(
                     "INSERT INTO product_variants (product_id, sku, size, color_name, color_hex, price_override, stock_quantity, low_stock_threshold)

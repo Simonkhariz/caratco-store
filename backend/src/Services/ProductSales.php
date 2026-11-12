@@ -11,6 +11,10 @@ use Throwable;
  * Keeps products.units_sold (units on paid orders that were not cancelled or fully refunded)
  * up to date, so "Best selling" is an indexed column instead of adding up every order line
  * on each catalogue request (that took minutes once there were 150k order lines).
+ *
+ * A demo catalogue may start a product with a sales figure (products.units_sold_start, written
+ * by the seeder and read only here). units_sold is that figure plus the real units, so the "Top
+ * selling" row a new shop opens with does not collapse on its first paid order.
  */
 final class ProductSales
 {
@@ -42,7 +46,7 @@ final class ProductSales
                 "UPDATE `products` p
                  JOIN (SELECT DISTINCT `product_id` FROM `order_items` WHERE `order_id` = ? AND `product_id` IS NOT NULL) t
                    ON t.`product_id` = p.`id`
-                 SET p.`units_sold` = (
+                 SET p.`units_sold` = p.`units_sold_start` + (
                      SELECT COALESCE(SUM(oi.`quantity`), 0)
                      FROM `order_items` oi JOIN `orders` o ON o.`id` = oi.`order_id`
                      WHERE oi.`product_id` = p.`id` AND " . self::COUNTED . "
@@ -66,7 +70,7 @@ final class ProductSales
                  WHERE oi.`product_id` IS NOT NULL AND " . self::COUNTED . "
                  GROUP BY oi.`product_id`
              ) s ON s.`product_id` = p.`id`
-             SET p.`units_sold` = COALESCE(s.qty, 0)"
+             SET p.`units_sold` = p.`units_sold_start` + COALESCE(s.qty, 0)"
         );
     }
 }

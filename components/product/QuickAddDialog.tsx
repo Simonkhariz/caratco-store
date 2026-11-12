@@ -12,7 +12,7 @@ import { useCart, MAX_QUANTITY_PER_LINE } from '@/context/CartContext';
 import { Dialog } from '@/components/ui/Dialog';
 import { VariantSelector } from '@/components/product/VariantSelector';
 import { formatPrice } from '@/lib/currency';
-import { colorStockFor, findVariant, firstChoice, sizeAfterColorChange, sizeStatesFor, stockMessageFor } from '@/lib/variants';
+import { colorStockFor, findVariant, firstChoice, sizeAfterColorChange, sizeStatesFor, soldOutColorName, stockMessageFor } from '@/lib/variants';
 
 /**
  * Choose the options (colour and size in the template) and add to the cart without leaving the
@@ -96,7 +96,7 @@ export function QuickAddDialog({ product, onClose }: { product: Product; onClose
           maxQuantity={Math.max(1, Math.min(MAX_QUANTITY_PER_LINE, stock))}
           onQuantityChange={setQuantity}
           canPurchase={canPurchase}
-          stockMessage={stockMessageFor(selectedVariant, variants.length)}
+          stockMessage={stockMessageFor(selectedVariant, variants.length, soldOutColorName(variants, selectedColor))}
           onAddToCart={add}
           onBuyNow={() => {
             if (add()) router.push('/cart');

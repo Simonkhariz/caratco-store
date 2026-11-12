@@ -23,9 +23,7 @@ final class Shop
     public static function all(): array
     {
         if (self::$config === null) {
-            $path = dirname(__DIR__, 2) . '/config/shop.json';
-            $decoded = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
-            $config = is_array($decoded) ? $decoded : [];
+            $config = self::readFile();
             if (self::testing()) {
                 $fromEnv = json_decode((string) Env::get('SHOP_CONFIG_OVERRIDES', ''), true);
                 $config = self::merge(self::merge($config, is_array($fromEnv) ? $fromEnv : []), self::$testOverrides);
@@ -33,6 +31,57 @@ final class Shop
             self::$config = $config;
         }
         return self::$config;
+    }
+
+    /**
+     * The settings file, decoded. A shop whose file is missing or broken must not quietly run as
+     * some default shop with its age check and heavy item fee switched off, so this never falls
+     * back: it writes one line to the PHP error log and stops. A web request gets a 500 that says
+     * so (public/index.php reads the file before any route runs); a command-line script prints the
+     * same message and ends.
+     *
+     * @return array<string, mixed>
+     */
+    private static function readFile(): array
+    {
+        $path = dirname(__DIR__, 2) . '/config/shop.json';
+        // Tests only: another file, to check what a missing or broken one does.
+        $other = self::testing() ? trim((string) Env::get('SHOP_CONFIG_FILE', '')) : '';
+        if ($other !== '') {
+            $path = $other;
+        }
+
+        $raw = is_file($path) && is_readable($path) ? file_get_contents($path) : false;
+        if ($raw === false) {
+            self::stop('it is missing or cannot be opened');
+        }
+        // Some Windows editors save a byte order mark in front of the text; JSON does not allow one.
+        if (str_starts_with($raw, "\xEF\xBB\xBF")) {
+            $raw = substr($raw, 3);
+        }
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded) || ($decoded !== [] && array_is_list($decoded))) {
+            self::stop('it is not valid JSON (' . (json_last_error() !== JSON_ERROR_NONE ? json_last_error_msg() : 'it must be one object') . ')');
+        }
+        return $decoded;
+    }
+
+    private static bool $problemLogged = false;
+
+    private static function stop(string $problem): never
+    {
+        $message = "This shop's settings file could not be read: backend/config/shop.json, {$problem}. The shop cannot run without it.";
+        // A script run by hand logs to the screen unless PHP has a log file: there the line below is the log.
+        $cli = PHP_SAPI === 'cli';
+        if (!self::$problemLogged && (!$cli || (string) ini_get('error_log') !== '')) {
+            self::$problemLogged = true;
+            error_log('[Shop] ' . $message);
+        }
+        if ($cli) {
+            fwrite(STDERR, $message . "\n");
+            exit(1);
+        }
+        throw new ShopConfigError($message);
     }
 
     /*
@@ -43,7 +92,8 @@ final class Shop
      *   - the env value SHOP_CONFIG_OVERRIDES (JSON, e.g. {"features":{"ageCheck":true}}) is laid
      *     over the file. A suite starts its own API with it (TestKit::startApi), the same way
      *     DEV_MODE_DEFAULT reaches the test API through its environment;
-     *   - overrideForTests() does the same inside the test's own PHP process.
+     *   - overrideForTests() does the same inside the test's own PHP process;
+     *   - the env value SHOP_CONFIG_FILE names another file to read instead of shop.json (see readFile).
      *
      * Objects are merged key by key; lists and plain values replace the file's. On a real shop
      * (any other APP_ENV) both are ignored, so a stray env value can never change the shop.
@@ -201,8 +251,24 @@ final class Shop
         return is_array($slugs) ? array_values(array_filter($slugs, 'is_string')) : [];
     }
 
-    /** True when products of this category (by slug) can only be bought by an adult. */
-    public static function isAgeRestricted(?string $categorySlug): bool
+    /**
+     * True when a product can only be bought by an adult: the shop checks ages, and either the
+     * product's category (by slug) is one of the listed ones or the product itself is marked
+     * (products.is_age_restricted: a wine hamper among the hampers).
+     */
+    public static function isAgeRestricted(?string $categorySlug, mixed $marked = false): bool
+    {
+        if (!self::feature('ageCheck')) {
+            return false;
+        }
+        if (in_array($marked, [true, 1, '1'], true)) {
+            return true;
+        }
+        return self::isAgeRestrictedCategory($categorySlug);
+    }
+
+    /** True when the shop checks ages and lists this category (by slug) as for adults only. */
+    public static function isAgeRestrictedCategory(?string $categorySlug): bool
     {
         $slug = strtolower(trim((string) $categorySlug));
         return $slug !== '' && in_array($slug, array_map('strtolower', self::ageRestrictedCategories()), true);

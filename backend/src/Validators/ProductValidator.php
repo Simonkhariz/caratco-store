@@ -106,6 +106,10 @@ class ProductValidator
             $errors['is_heavy'] = 'Say whether this is a heavy item with yes or no.';
         }
 
+        if (array_key_exists('is_age_restricted', $data) && !in_array($data['is_age_restricted'], [true, false, 0, 1, '0', '1'], true)) {
+            $errors['is_age_restricted'] = 'Say whether this product is for adults only with yes or no.';
+        }
+
         if (isset($data['product_type']) && $data['product_type'] !== 'physical') {
             $errors['product_type'] = "Product type must be 'physical'. Digital products are not supported in this store.";
         }
@@ -141,6 +145,13 @@ class ProductValidator
         // The two options are named by the shop ("size" and "colour", "volume" and "scent").
         $first = Shop::option1Word();
         $second = Shop::option2Word();
+        // Which options this product really uses: some row gives a value that is not the "none" word.
+        $usesFirst = false;
+        $usesSecond = false;
+        foreach ($variants as $v) {
+            $usesFirst = $usesFirst || (is_array($v) && Shop::usesOption1(Input::text($v['size'] ?? null)));
+            $usesSecond = $usesSecond || (is_array($v) && Shop::usesOption2(Input::text($v['color_name'] ?? null)));
+        }
         $seen = [];
         foreach (array_values($variants) as $i => $v) {
             $row = 'Variant ' . ($i + 1) . ': ';
@@ -149,6 +160,16 @@ class ProductValidator
             }
             if (Input::tooLong($v['size'] ?? '', 50) || Input::tooLong($v['color_name'] ?? '', 50)) {
                 return $row . "{$first} and {$second} can be at most 50 characters.";
+            }
+            // The "none" word is how a product without the option is stored, and it is never shown.
+            // Typed as a real choice beside others ("Standard" next to "Pro") that choice would
+            // vanish from the product page, the filters and the receipts.
+            foreach ([[$usesFirst, 'size', Shop::option1None(), $first], [$usesSecond, 'color_name', Shop::option2None(), $second]] as [$used, $field, $none, $word]) {
+                $typed = Input::text($v[$field] ?? null);
+                if ($used && $typed !== '' && mb_strtolower($typed) === mb_strtolower($none)) {
+                    return $row . "\"{$typed}\" is the word this shop keeps for a product without " . Shop::withArticle($word)
+                        . ", so it cannot be one of the choices. Use another name, for example \"{$none} {$word}\".";
+                }
             }
             // An option left empty is fine: the product does not use it (it is stored as the
             // shop's "none" word). Two variants still cannot be the same pair.

@@ -37,7 +37,7 @@ export default function RouteError({ error, reset }: ErrorProps) {
           <button
             type="button"
             onClick={() => reset()}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white font-semibold text-sm px-6 py-3 rounded-full transition-all shadow-md"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-accent-ink font-semibold text-sm px-6 py-3 rounded-full transition-all shadow-md"
           >
             <HugeiconsIcon icon={RefreshIcon} size={16} aria-hidden="true" />
             <span>Try again</span>

@@ -6,7 +6,9 @@ import assert from 'node:assert/strict';
 import './helpers/alias-hooks.mjs';
 
 const { SHOP, option1Word, option2Word, withArticle } = await import('../lib/shop.ts');
-const { findVariant, firstChoice, selectionLabelFor, sizeAfterColorChange, stockMessageFor, usedOptions } = await import('../lib/variants.ts');
+const { findVariant, firstChoice, selectionLabelFor, sizeAfterColorChange, soldOutColorName, stockMessageFor, usedOptions } = await import(
+  '../lib/variants.ts'
+);
 const { whatsAppItems } = await import('../lib/whatsapp.ts');
 
 const NONE1 = SHOP.option1.none;
@@ -40,6 +42,32 @@ test('the stock line names only the options the product uses', () => {
   for (const message of [stockMessageFor(variant(1, NONE1, noColour, 0), 1), stockMessageFor(variant(1, NONE1, noColour, 2), 1)]) {
     assert.ok(!message.includes(NONE1) && !message.includes(NONE2));
   }
+});
+
+test('a chosen option 2 with nothing in stock says "sold out", not "choose"', () => {
+  // Navy has an M in stock; Red is made in S and M and both are gone.
+  const variants = [variant(1, 'S', navy, 0), variant(2, 'M', navy, 2), variant(3, 'S', red, 0), variant(4, 'M', red, 0)];
+  assert.equal(soldOutColorName(variants, red), 'Red');
+  assert.equal(soldOutColorName(variants, navy), null, 'something is left in it');
+  assert.equal(soldOutColorName(variants, null), null);
+  assert.equal(soldOutColorName(variants, { name: 'Green', hex: '#0f0' }), null, 'not made in it: not "sold out"');
+
+  // The shopper had M in Navy and picks Red: no size is chosen, because none can be.
+  const size = sizeAfterColorChange(variants, red, 'M');
+  assert.equal(size, null);
+  const chosen = findVariant(variants, red, size);
+  assert.equal(chosen, null);
+  assert.equal(stockMessageFor(chosen, variants.length, soldOutColorName(variants, red)), `Sold out in this ${option2Word}.`);
+  // Back to Navy with S (sold out there, M is not): there is a choice to make, so it is asked for.
+  assert.equal(stockMessageFor(findVariant(variants, navy, null), variants.length, soldOutColorName(variants, navy)), `Choose ${withArticle(option1Word)} to continue.`);
+
+  // A product that does not use option 2 never has its "none" value named.
+  const plain = [variant(1, 'S', noColour, 0), variant(2, 'M', noColour, 0)];
+  assert.equal(stockMessageFor(null, plain.length, soldOutColorName(plain, noColour)), 'Sold out.');
+  // Every other message is as it was, whatever the third argument.
+  assert.equal(stockMessageFor(variant(3, 'S', red, 0), 4, 'Red'), `Sold out in this ${option2Word} and ${option1Word}.`);
+  assert.equal(stockMessageFor(variant(2, 'M', navy, 2), 4, null), `Only 2 left in this ${option1Word}.`);
+  assert.equal(stockMessageFor(null, 0, 'Red'), 'This product is not available to order right now.');
 });
 
 test('the phone bar shows the chosen options, or what is still to choose', () => {
@@ -78,15 +106,21 @@ test('changing option 2 keeps the one value of an option 1 the product does not 
   assert.equal(sizeAfterColorChange(sized, red, 'S'), 'S');
 });
 
-test('an order line for WhatsApp never names an unused option', () => {
+test('an order line for WhatsApp names both options, and never an unused one', () => {
   const line = (variant_options) => ({ item_name: 'Item', quantity: '2', line_total: '3000', variant_options });
-  const [both, onlyTwo, neither, missing] = whatsAppItems([
+  const [both, sameSize, onlyOne, onlyTwo, neither, missing] = whatsAppItems([
     line({ size: 'M', color: 'Navy' }),
+    line({ size: 'M', color: 'Red' }),
+    line({ size: '50ml', color: NONE2 }),
     line({ size: NONE1, color: 'Vanilla' }),
     line({ size: NONE1, color: NONE2 }),
     line(null),
   ]);
-  assert.equal(both.size, 'M');
+  assert.equal(both.size, 'M · Navy');
+  // Two lines of one product that differ only in option 2 can be told apart.
+  assert.equal(sameSize.size, 'M · Red');
+  assert.notEqual(both.size, sameSize.size);
+  assert.equal(onlyOne.size, '50ml', 'no stray separator');
   assert.equal(onlyTwo.size, 'Vanilla');
   assert.equal(neither.size, undefined);
   assert.equal(missing.size, undefined);

@@ -68,7 +68,7 @@ export const StickyMobileBar: React.FC<StickyMobileBarProps> = ({
           type="button"
           onClick={onAddToCart}
           disabled={!canPurchase || !ready}
-          className="flex-1 bg-accent text-white active:bg-accent-hover text-xs font-bold py-3 rounded-full flex items-center justify-center gap-1.5 shadow-md disabled:bg-neutral-300 disabled:text-neutral-700 disabled:shadow-none"
+          className="flex-1 bg-accent text-accent-ink active:bg-accent-hover text-xs font-bold py-3 rounded-full flex items-center justify-center gap-1.5 shadow-md disabled:bg-neutral-300 disabled:text-neutral-700 disabled:shadow-none"
         >
           <HugeiconsIcon icon={ShoppingBag01Icon} size={14} aria-hidden="true" />
           <span>{canPurchase ? 'Add to Cart' : 'Unavailable'}</span>

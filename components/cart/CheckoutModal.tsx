@@ -58,7 +58,7 @@ import {
 } from '@/lib/checkout-validation';
 import { useInvoiceSent } from '@/lib/use-order-data';
 import { NIGERIAN_STATES } from '@/lib/nigeria';
-import { SHOP, mainOption, option1Word, option2Word } from '@/lib/shop';
+import { SHOP, option1Word, option2Word, optionsText } from '@/lib/shop';
 import { Dialog } from '@/components/ui/Dialog';
 import { PaymentMethodsNotice } from '@/components/cart/PaymentMethodsNotice';
 
@@ -80,6 +80,7 @@ interface PayableOrder {
   grand_total: number;
   expires_at?: string | null;
   shipping_address: { full_name?: string; phone?: string; address_line1?: string; city?: string; state?: string };
+  /** `size` holds the line's options as people read them ("M · Navy"), or nothing for a product with none. */
   items: Array<{ name: string; quantity: number; size?: string; line_total?: number; price?: number }>;
 }
 
@@ -548,8 +549,9 @@ function CheckoutSession({
         items: (placed.items || []).map((it) => ({
           name: it.name,
           quantity: Number(it.quantity),
-          // Never the "none" value of an option the product does not use.
-          size: mainOption(it.variant_options?.size, it.variant_options?.color) || undefined,
+          // Both options ("M · Navy"), as whatsAppItems gives them for a resumed order: two lines of
+          // one product can differ only in the second. Never the "none" value of an unused option.
+          size: optionsText(it.variant_options?.size, it.variant_options?.color, ' · ') || undefined,
           line_total: Number(it.line_total),
         })),
       });
@@ -988,7 +990,7 @@ function CheckoutSession({
                   type="submit"
                   disabled={isSubmitting || isQuoting || !quote?.shipping_zone || resumeState !== 'idle'}
                   aria-describedby={!quote?.shipping_zone ? 'co-delivery-status' : undefined}
-                  className="w-full bg-accent text-white hover:bg-accent-hover disabled:opacity-50 font-bold py-3.5 rounded-full text-sm transition-all shadow-md mt-2 flex items-center justify-center gap-2"
+                  className="w-full bg-accent text-accent-ink hover:bg-accent-hover disabled:opacity-50 font-bold py-3.5 rounded-full text-sm transition-all shadow-md mt-2 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <span>Placing order…</span>
@@ -1084,7 +1086,7 @@ function CheckoutSession({
                   type="button"
                   onClick={() => void handlePayOrder(payNowGateway)}
                   disabled={busy || isCheckingPaid}
-                  className="w-full bg-accent text-white hover:bg-accent-hover font-bold py-3.5 rounded-full text-sm transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-60"
+                  className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-bold py-3.5 rounded-full text-sm transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-60"
                 >
                   {isInitializingPayment === payNowGateway ? (
                     <span>Opening secure payment…</span>

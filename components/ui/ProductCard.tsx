@@ -133,11 +133,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, preload = fal
           onFocus={soldOut ? undefined : warm}
           disabled={checking}
           aria-busy={checking || undefined}
-          className="bg-accent hover:bg-accent-hover text-white rounded-full p-2.5 sm:px-3.5 sm:py-2 md:p-2.5 lg:px-3.5 lg:py-2 flex items-center justify-center gap-1 text-xs font-semibold shadow-sm hover:shadow-md transition-all shrink-0 disabled:opacity-70"
+          className="bg-accent hover:bg-accent-hover text-accent-ink rounded-full p-2.5 sm:px-3.5 sm:py-2 md:p-2.5 lg:px-3.5 lg:py-2 flex items-center justify-center gap-1 text-xs font-semibold shadow-sm hover:shadow-md transition-all shrink-0 disabled:opacity-70"
           aria-label={soldOut ? `View ${product.name}` : `Add ${product.name} to cart`}
         >
           {checking ? (
-            <span className="block h-[15px] w-[15px] animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
+            // The spinner is drawn in the button's own text colour (the accent's ink), faint for the ring.
+            <span className="block h-[15px] w-[15px] animate-spin rounded-full border-2 border-[color-mix(in_srgb,var(--accent-ink)_30%,transparent)] border-t-accent-ink" aria-hidden="true" />
           ) : (
             <HugeiconsIcon icon={ShoppingBag01Icon} size={15} aria-hidden="true" />
           )}

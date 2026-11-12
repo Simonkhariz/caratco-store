@@ -20,7 +20,7 @@ export default function NotFound() {
       <nav aria-label="Helpful links" className="flex flex-col sm:flex-row items-center gap-3">
         <Link
           href="/"
-          className="bg-accent text-white hover:bg-accent-hover font-semibold px-8 py-3.5 rounded-full text-sm transition-colors shadow-md"
+          className="bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-8 py-3.5 rounded-full text-sm transition-colors shadow-md"
         >
           Go to the homepage
         </Link>

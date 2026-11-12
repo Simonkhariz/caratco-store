@@ -1,4 +1,4 @@
-import { SHOP, option1Word, option2Word, shopFilters, styleWord } from '@/lib/shop';
+import { SHOP, option1Word, option2Word, shopFilters, styleHeading, styleName, styleWord } from '@/lib/shop';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { CatalogClient, type CatalogSeed } from '@/components/catalog/CatalogClient';
@@ -14,15 +14,20 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   const words = (slug: string) => slug.replace(/[-_]+/g, ' ').replace(/\b\p{L}/gu, (c) => c.toUpperCase());
   // The filters this shop has, in its own words ("colour, size, style" in the template).
   const filterWords = ['category', option2Word, option1Word, ...(SHOP.style.enabled ? [styleWord] : [])].join(', ');
+  // The shop's own heading for a style ("Casual style"), with the style as the shop spells it in
+  // its settings; one the settings do not list is shown as the address has it.
+  const styleTitle = filters.dressStyle ? styleHeading(styleName(filters.dressStyle)) : '';
   const heading = filters.searchQuery
     ? `Search: ${filters.searchQuery}`
     : filters.category
       ? words(filters.category)
-      : filters.onSale || filters.flashDeals
-        ? 'Deals'
-        : filters.featured
-          ? 'Featured products'
-          : 'Shop all products';
+      : styleTitle
+        ? styleTitle
+        : filters.onSale || filters.flashDeals
+          ? 'Deals'
+          : filters.featured
+            ? 'Featured products'
+            : 'Shop all products';
   return {
     title: `${heading} | ${SHOP.name}`,
     description: `Browse every product in the ${SHOP.name} catalogue, with filters for ${filterWords} and price.`,

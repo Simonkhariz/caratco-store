@@ -343,7 +343,7 @@ function CheckoutCallbackContent() {
           type="button"
           onClick={() => void handleRetryPayment(payNowGateway)}
           disabled={isRetrying !== false}
-          className="w-full bg-accent text-white hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-50"
+          className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-50"
         >
           {isRetrying === payNowGateway ? 'Opening payment…' : 'Pay now'}
         </button>
@@ -412,13 +412,13 @@ function CheckoutCallbackContent() {
                   placeholder="Order access key"
                   className="flex-1 text-sm px-3 py-2 border border-neutral-300 rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-accent"
                 />
-                <button type="submit" disabled={!keyInput} className="bg-accent text-white text-sm px-4 py-2 rounded-xl disabled:opacity-40">
+                <button type="submit" disabled={!keyInput} className="bg-accent text-accent-ink text-sm px-4 py-2 rounded-xl disabled:opacity-40">
                   Open
                 </button>
               </form>
             )}
             <div className="flex flex-col gap-2.5">
-              <button type="button" onClick={() => void checkAgain()} className="w-full bg-accent text-white hover:bg-accent-hover font-semibold py-3 rounded-full text-sm">
+              <button type="button" onClick={() => void checkAgain()} className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm">
                 Try again
               </button>
               <Link href={`/track-order${orderNumber ? `?order=${encodeURIComponent(orderNumber)}` : ''}`} className="w-full bg-neutral-100 hover:bg-neutral-200 font-semibold py-3 rounded-full text-sm">
@@ -519,7 +519,7 @@ function CheckoutCallbackContent() {
             <div className="space-y-3">
               <Link
                 href={`/track-order?order=${encodeURIComponent(orderNumber)}`}
-                className="w-full bg-accent text-white hover:bg-accent-hover font-bold py-3.5 rounded-full text-sm shadow-md flex items-center justify-center gap-2"
+                className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-bold py-3.5 rounded-full text-sm shadow-md flex items-center justify-center gap-2"
               >
                 <span>Track your order</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={15} aria-hidden="true" />
@@ -618,7 +618,7 @@ function CheckoutCallbackContent() {
                   type="button"
                   onClick={() => void checkAgain()}
                   disabled={isRefreshing}
-                  className="w-full bg-accent text-white hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-60"
+                  className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-60"
                 >
                   {isRefreshing ? 'Checking…' : 'Check again'}
                 </button>
@@ -692,7 +692,7 @@ function CheckoutCallbackContent() {
             <Link
               href="/cart"
               onClick={() => clearPendingOrder(orderNumber)}
-              className="block w-full bg-accent text-white hover:bg-accent-hover font-semibold py-3 rounded-full text-sm"
+              className="block w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm"
             >
               Go to cart
             </Link>

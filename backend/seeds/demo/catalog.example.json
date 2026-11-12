@@ -29,6 +29,7 @@
       "units_sold": 0,
       "warranty": null,
       "heavy": false,
+      "age_restricted": false,
       "specifications": [
         { "name": "Made in", "value": "Nigeria" }
       ],

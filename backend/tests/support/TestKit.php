@@ -230,14 +230,22 @@ final class TestKit
             }
         });
 
+        // Up as soon as it answers at all: a suite may start it to see it refuse (a 500 is an answer).
         $url = "http://127.0.0.1:{$port}/api/v1";
+        $anyAnswer = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 5]]);
         for ($i = 0; $i < 50; $i++) {
             usleep(200000);
-            if (@file_get_contents("{$url}/health") !== false) {
+            if (@file_get_contents("{$url}/health", false, $anyAnswer) !== false) {
                 return $url;
             }
         }
         return null;
+    }
+
+    /** What an API started with startApi() has written to its output and PHP error log so far. */
+    public function apiLog(int $port): string
+    {
+        return (string) @file_get_contents($this->cookieDir . "/api-{$port}.log");
     }
 
     // -------------------------------------------------------------------------

@@ -26,6 +26,7 @@ import { markInvoiceSent, readGuestToken, saveGuestToken, saveLookupEmail } from
 import { useStoreSupport } from '@/lib/use-store-support';
 import { useInvoiceSent, useLatestOrderNumber } from '@/lib/use-order-data';
 import { getOrderStatusDisplay, getShipmentDisplay, orderLookupErrorMessage, STATUS_TONE_CLASSES } from '@/lib/order-status';
+import { optionsText } from '@/lib/shop';
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon';
 import { Dialog } from '@/components/ui/Dialog';
 import { PaymentMethodsNotice } from '@/components/cart/PaymentMethodsNotice';
@@ -405,7 +406,7 @@ function TrackOrderContent() {
                 setOrderNumber(recentOrderNumber);
                 performLookup(recentOrderNumber);
               }}
-              className="bg-accent hover:bg-accent-hover text-white font-semibold px-4 py-1.5 rounded-full transition-colors shrink-0 flex items-center gap-1"
+              className="bg-accent hover:bg-accent-hover text-accent-ink font-semibold px-4 py-1.5 rounded-full transition-colors shrink-0 flex items-center gap-1"
             >
               <span>Track now</span>
               <ArrowRight className="w-3 h-3" aria-hidden="true" />
@@ -465,11 +466,11 @@ function TrackOrderContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-accent text-white hover:bg-accent-hover font-bold py-3.5 rounded-full text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-bold py-3.5 rounded-full text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+                  <span className="w-4 h-4 border-2 border-[color-mix(in_srgb,var(--accent-ink)_30%,transparent)] border-t-accent-ink rounded-full animate-spin" aria-hidden="true" />
                   <span>Checking status…</span>
                 </>
               ) : (
@@ -515,7 +516,7 @@ function TrackOrderContent() {
                       type="button"
                       onClick={() => void handleInitiatePayment(payNowGateway)}
                       disabled={Boolean(isInitializingPayment)}
-                      className="flex-1 sm:flex-initial bg-accent hover:bg-accent-hover text-white font-bold px-5 py-2.5 rounded-full text-xs transition-all shadow flex items-center justify-center gap-1.5 disabled:opacity-60"
+                      className="flex-1 sm:flex-initial bg-accent hover:bg-accent-hover text-accent-ink font-bold px-5 py-2.5 rounded-full text-xs transition-all shadow flex items-center justify-center gap-1.5 disabled:opacity-60"
                     >
                       <CreditCard className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{isInitializingPayment === payNowGateway ? 'Connecting…' : `Pay now (${formatPrice(order.grand_total)})`}</span>
@@ -560,7 +561,7 @@ function TrackOrderContent() {
                   {(isPaid || awaitingConfirmation) && (
                     <Link
                       href={`/checkout/callback?order=${encodeURIComponent(order.order_number)}`}
-                      className="inline-flex items-center gap-1.5 bg-accent hover:bg-accent-hover text-white font-semibold px-4 py-2 rounded-full text-xs transition-colors"
+                      className="inline-flex items-center gap-1.5 bg-accent hover:bg-accent-hover text-accent-ink font-semibold px-4 py-2 rounded-full text-xs transition-colors"
                     >
                       <span>{isPaid ? 'View receipt' : 'See payment status'}</span>
                     </Link>
@@ -636,12 +637,12 @@ function TrackOrderContent() {
                           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-neutral-900" />
                         </div>
 
-                        {/* Done: black with a white tick. Now: white with a black ring. Later: grey number. */}
+                        {/* Done: the shop's accent with a tick in its ink (black and white in the template). Now: white with an accent ring. Later: grey number. */}
                         <div
                           aria-hidden="true"
                           className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shrink-0 ${
                             isDone
-                              ? 'bg-accent text-white'
+                              ? 'bg-accent text-accent-ink'
                               : isCurrent
                                 ? 'bg-white text-black border-2 border-accent ring-4 ring-black/10'
                                 : 'bg-neutral-100 text-neutral-500'
@@ -769,22 +770,28 @@ function TrackOrderContent() {
                 </div>
 
                 <div className="divide-y divide-neutral-100">
-                  {order.items.map((item) => (
-                    <div key={item.id} className="py-3 flex items-center justify-between gap-3 text-sm">
-                      <div>
-                        <p className="font-bold text-neutral-900">{item.item_name}</p>
-                        <p className="text-neutral-600 font-mono text-xs">
-                          Qty: {item.quantity} &bull; SKU: {item.sku}
-                        </p>
-                        {item.variant_options?.warranty && (
-                          <p className="text-neutral-600 text-xs mt-0.5">Warranty: {item.variant_options.warranty}</p>
-                        )}
+                  {order.items.map((item) => {
+                    // Which one of the product was ordered ("M · Navy"): two lines can differ only in
+                    // this. Nothing for a product with no options.
+                    const options = optionsText(item.variant_options?.size, item.variant_options?.color, ' · ');
+                    return (
+                      <div key={item.id} className="py-3 flex items-center justify-between gap-3 text-sm">
+                        <div>
+                          <p className="font-bold text-neutral-900">{item.item_name}</p>
+                          {options && <p className="text-neutral-600 text-xs">{options}</p>}
+                          <p className="text-neutral-600 font-mono text-xs">
+                            Qty: {item.quantity} &bull; SKU: {item.sku}
+                          </p>
+                          {item.variant_options?.warranty && (
+                            <p className="text-neutral-600 text-xs mt-0.5">Warranty: {item.variant_options.warranty}</p>
+                          )}
+                        </div>
+                        <span className="font-bold text-neutral-900 font-mono">
+                          {formatPrice(item.line_total)}
+                        </span>
                       </div>
-                      <span className="font-bold text-neutral-900 font-mono">
-                        {formatPrice(item.line_total)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className="pt-3 border-t border-neutral-100 space-y-1.5 text-sm text-neutral-600">
@@ -933,11 +940,11 @@ function TrackOrderContent() {
                       type="button"
                       onClick={() => void handleInitiatePayment(payNowGateway)}
                       disabled={Boolean(isInitializingPayment)}
-                      className="w-full py-3.5 rounded-full text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover disabled:opacity-60"
+                      className="w-full py-3.5 rounded-full text-accent-ink font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover disabled:opacity-60"
                     >
                       {isInitializingPayment === payNowGateway ? (
                         <>
-                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
+                          <span className="w-4 h-4 border-2 border-[color-mix(in_srgb,var(--accent-ink)_30%,transparent)] border-t-accent-ink rounded-full animate-spin" aria-hidden="true" />
                           <span>Opening secure payment…</span>
                         </>
                       ) : (

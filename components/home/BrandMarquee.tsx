@@ -47,7 +47,7 @@ export function BrandMarquee({ brands }: { brands?: string[] }) {
   while (copy.length < 16) copy.push(...list);
 
   return (
-    <section aria-label="Brands we stock" className="shrink-0 bg-accent py-[clamp(1rem,2.4svh,1.25rem)] text-white sm:py-[clamp(1.1rem,2.6svh,1.75rem)]">
+    <section aria-label="Brands we stock" className="shrink-0 bg-accent py-[clamp(1rem,2.4svh,1.25rem)] text-accent-ink sm:py-[clamp(1.1rem,2.6svh,1.75rem)]">
       <div
         className="marquee overflow-hidden"
         style={{ maskImage: 'linear-gradient(to right, transparent, black 6%, black 94%, transparent)' }}

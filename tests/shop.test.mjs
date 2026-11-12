@@ -9,10 +9,14 @@ import {
   hasOption2,
   mainOption,
   nameWithOptions,
+  option1HelpFor,
   option1Word,
   option2Word,
   optionsText,
   shopFilters,
+  styleHeading,
+  styleHeadingParts,
+  styleName,
   styleWord,
   withArticle,
 } from '../lib/shop.ts';
@@ -83,9 +87,47 @@ test('the words for the middle of a sentence follow the labels', () => {
   assert.equal(withArticle('option'), 'an option');
 });
 
+test('the tip under the option-1 picker is the category\'s own, else the general one, else nothing', () => {
+  const jewellery = { help: 'General tip', helpByCategory: { rings: 'Ring size tip', necklaces: '' } };
+  assert.equal(option1HelpFor('rings', jewellery), 'Ring size tip');
+  assert.equal(option1HelpFor(' Rings ', jewellery), 'Ring size tip', 'the slug is matched whatever its case');
+  assert.equal(option1HelpFor('watches', jewellery), 'General tip');
+  assert.equal(option1HelpFor('', jewellery), 'General tip');
+  assert.equal(option1HelpFor(null, jewellery), 'General tip');
+  // A category given an empty text shows no tip at all.
+  assert.equal(option1HelpFor('necklaces', jewellery), '');
+  assert.equal(option1HelpFor('rings', { help: '', helpByCategory: {} }), '');
+  assert.equal(option1HelpFor('watches', { help: '', helpByCategory: { rings: 'Ring size tip' } }), '');
+  // This shop's own settings.
+  assert.equal(option1HelpFor('a-category-no-shop-has'), SHOP.option1.help);
+  for (const [slug, text] of Object.entries(SHOP.option1.helpByCategory)) assert.equal(option1HelpFor(slug.toUpperCase()), text);
+});
+
+test('a style is shown as the shop wrote it; only a link carries the lower-case form', () => {
+  assert.equal(styleName('lg', ['Voltix', 'LG']), 'LG');
+  assert.equal(styleName('LG', ['Voltix', 'LG']), 'LG');
+  assert.equal(styleName('eau de parfum', ['Eau de Parfum']), 'Eau de Parfum');
+  assert.equal(styleName(' voltix ', ['Voltix', 'LG']), 'Voltix');
+  // The shop's own list is the second place to look, and an unknown style is shown as it came.
+  for (const name of SHOP.style.values) assert.equal(styleName(name.toLowerCase()).toLowerCase(), name.trim().toLowerCase());
+  for (const name of SHOP.style.values) assert.ok(SHOP.style.values.map((v) => v.trim()).includes(styleName(name.toUpperCase())));
+  assert.equal(styleName('no-such-style-xyz'), 'no-such-style-xyz');
+  assert.equal(styleName(null), '');
+});
+
+test('the catalogue heading for a style follows the shop\'s pattern', () => {
+  assert.ok(SHOP.style.heading.includes('{value}'), 'a shop file without the pattern shows the value alone');
+  const [before, after] = styleHeadingParts();
+  assert.equal(styleHeading('Casual'), `${before}Casual${after}`);
+  assert.ok(SHOP.style.heading.startsWith(`${before}{value}`), 'the name goes where the pattern has {value}');
+  assert.ok(styleHeading('LG').includes('LG'), 'the name keeps its spelling');
+  assert.ok(!styleHeading('LG').includes('{value}'));
+});
+
 test('the settings every screen reads are there', () => {
   // Keys with a fallback (a shop file may leave them out).
   assert.ok(SHOP.style.short, 'style.short falls back to style.label');
+  assert.equal(typeof SHOP.option1.helpByCategory, 'object');
   assert.equal(typeof SHOP.wording.searchExampleShort, 'string');
   assert.equal(typeof SHOP.wording.searchExampleLong, 'string');
   for (const text of [SHOP.option1.label, SHOP.option1.plural, NONE1, SHOP.option2.label, SHOP.option2.plural, NONE2, SHOP.specs.label]) {

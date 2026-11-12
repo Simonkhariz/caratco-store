@@ -98,7 +98,7 @@ export default async function RootLayout({
     // (app/admin/layout.tsx), so its class differs from the server's on purpose. Only this
     // element's own attributes are exempt; the rest of the page is still checked.
     <html lang="en" className={`${satoshi.variable} ${spaceGrotesk.variable}`} style={THEME_STYLE} suppressHydrationWarning>
-      <body className="min-h-screen flex flex-col bg-white text-black antialiased selection:bg-accent selection:text-white">
+      <body className="min-h-screen flex flex-col bg-white text-black antialiased selection:bg-accent selection:text-accent-ink">
         <QueryProvider>
           <StoreDataProvider seed={{ facets, shipping, payments, version }}>
             <AuthProvider>

@@ -5,7 +5,7 @@
  * and the page offers another way to reach the store.
  */
 
-import { SHOP, mainOption } from '@/lib/shop';
+import { SHOP, optionsText } from '@/lib/shop';
 import type { ApiOrder, ApiOrderItem } from '@/lib/api-client';
 
 /**
@@ -32,7 +32,10 @@ export interface WhatsAppOrderItem {
   name: string;
   quantity: number;
   price?: number;
-  /** The option that names the line ("M", "50ml"); left out for a product with no options. */
+  /**
+   * The line's options as people read them ("M · Navy", "50ml"), both of them: two lines of one
+   * product can differ only in the second. Left out for a product with no options.
+   */
   size?: string;
   line_total?: number;
   product_name?: string;
@@ -64,7 +67,7 @@ export function whatsAppItems(items: ApiOrderItem[] | null | undefined): WhatsAp
     name: it.item_name,
     quantity: Number(it.quantity),
     line_total: Number(it.line_total),
-    size: mainOption(it.variant_options?.size, it.variant_options?.color) || undefined,
+    size: optionsText(it.variant_options?.size, it.variant_options?.color, ' · ') || undefined,
   }));
 }
 

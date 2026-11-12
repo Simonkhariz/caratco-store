@@ -44,8 +44,13 @@ export interface ApiProductSummary {
   discount_percent: number;
   available_colors?: Array<{ name: string; hex: string }>;
   available_sizes?: string[];
-  /** Worked out by the server from the product's category (the shop's age check). */
+  /**
+   * Worked out by the server (the shop's age check): the product's category is for adults only,
+   * or the product itself is flagged. This is the one the storefront reads.
+   */
   age_restricted?: boolean;
+  /** The owner's own flag on this product, already counted in `age_restricted`. Not read here. */
+  is_age_restricted?: boolean;
 }
 
 export interface ApiProductImage {
@@ -525,7 +530,8 @@ export function mapApiProductToStorefront(item: ApiProductSummary | ApiProductDe
     // A product can have no category (the API then sends null).
     category: item.category_slug ?? '',
     categoryName: item.category_name,
-    dressStyle: item.dress_style ? [item.dress_style.toLowerCase()] : [],
+    // As the shop wrote it ("LG", "Eau de Parfum"): only a link carries the lower-case form.
+    dressStyle: item.dress_style?.trim() ? [item.dress_style.trim()] : [],
     gender: 'unisex',
     images,
     colors,
