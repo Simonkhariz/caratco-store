@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { SHOP, SHOP_FILE_NAME, optionsText } from '@/lib/shop';
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
@@ -14,7 +14,7 @@ import { formatPrice } from '@/lib/currency';
 import { API_BASE_URL, ApiError, apiInitializePayment, apiMarkPaymentSent, errorMessage } from '@/lib/api-client';
 import { shouldRetryQuery } from '@/lib/query-client';
 import { parseShopTime } from '@/lib/shop-time';
-import { POLL_DELAYS, paymentKeys, paymentOrderQuery, paymentStatusQuery, paymentViewFor, type PaymentView } from '@/lib/payment-queries';
+import { POLL_DELAYS, getCallbackParams, paymentKeys, paymentOrderQuery, paymentStatusQuery, paymentViewFor, type PaymentView } from '@/lib/payment-queries';
 import { LIVE_VERIFY_DELAYS, MAX_RECONNECTS, RECONNECT_MS, isNewerState, openPaymentStream, type LiveState } from '@/lib/live-payment';
 import { buildWhatsAppInvoiceUrl, buildWhatsAppMessageUrl, buildWhatsAppReceiptUrl, formatSupportPhone, whatsAppOrderFrom } from '@/lib/whatsapp';
 import { useStoreSupport } from '@/lib/use-store-support';
@@ -28,22 +28,9 @@ type ViewState = 'checking' | PaymentView | 'error';
 
 const noSubscribe = () => () => {};
 
-function readParam(searchParams: URLSearchParams, keys: string[]): string {
-  for (const key of keys) {
-    const value = searchParams.get(key);
-    if (value) return value.split('?')[0];
-  }
-  return '';
-}
-
 function CheckoutCallbackContent() {
   const searchParams = useSearchParams();
-  const reference = readParam(searchParams, ['reference', 'paymentReference', 'trxref', 'transactionReference']);
-  let orderNumber = readParam(searchParams, ['order', 'order_number']);
-  if (!orderNumber && /^(PAY|MNFY)-ORD-/.test(reference)) {
-    const parts = reference.split('-');
-    orderNumber = parts.length >= 4 ? `ORD-${parts[2]}-${parts[3]}` : '';
-  }
+  const { orderNumber, reference } = getCallbackParams(searchParams);
 
   const { completePaidOrder } = useCart();
   const { supportPhone, payNowGateway, whatsappEnabled, livePaymentStatus, loaded: paymentMethodsLoaded, retry: retryPaymentMethods } = useStoreSupport();
@@ -65,6 +52,16 @@ function CheckoutCallbackContent() {
   const [awaitingFlash, setAwaitingFlash] = useState(false);
   const celebrated = useRef(false);
   const settled = useRef(false);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.top && window.self !== window.top) {
+        window.top.location.href = window.location.href;
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Payment status (lib/payment-queries.ts). While it is pending the page checks again on the
   // back-off schedule, only while the tab is visible, and once more when the shopper comes
@@ -126,10 +123,17 @@ function CheckoutCallbackContent() {
           : errorMessage(status.error, 'We could not check the payment right now.')
         : null;
 
+  const effectiveOrderNumber = result?.order_number || orderNumber;
+
+  // Guest access key and email resolved against the verified order number (or initial lookup).
+  const effectiveToken = useGuestToken(effectiveOrderNumber) ?? token;
+  const effectiveLookupEmail = useLookupEmail(effectiveOrderNumber) ?? lookupEmail;
+  const effectiveInvoiceSent = useInvoiceSent(effectiveOrderNumber) || invoiceSent;
+
   // Receipt details: asked once while the payment is open, and again once it is paid.
   const orderDetails = useQuery({
-    ...paymentOrderQuery(orderNumber, token ?? null, view === 'paid' ? 'paid' : 'open', token ? null : (lookupEmail ?? null)),
-    enabled: hydrated && !!orderNumber && (view === 'paid' || view === 'pending' || view === 'failed'),
+    ...paymentOrderQuery(effectiveOrderNumber, effectiveToken ?? null, view === 'paid' ? 'paid' : 'open', effectiveToken ? null : (effectiveLookupEmail ?? null), reference || null),
+    enabled: hydrated && !!effectiveOrderNumber && (view === 'paid' || view === 'pending' || view === 'failed'),
   });
   const order = orderDetails.data ?? null;
   const paidOrderSettled = view === 'paid' && (orderDetails.isSuccess || orderDetails.isError);
@@ -143,17 +147,17 @@ function CheckoutCallbackContent() {
     settled.current = true;
     // Opened from "Track order" with only the order number and email: this device may not be the
     // one the order was placed from, so its cart is left as it is.
-    if (!token && lookupEmail) return;
+    if (!effectiveToken && effectiveLookupEmail) return;
     const paidOrder = orderDetails.data ?? null;
     const paidAtMs = parseShopTime(result?.verified_at || paidOrder?.payment?.verified_at).getTime();
     const recent = Number.isFinite(paidAtMs) && Date.now() - paidAtMs < 2 * 24 * 60 * 60 * 1000;
     completePaidOrder(
-      orderNumber,
+      effectiveOrderNumber,
       recent && paidOrder && Array.isArray(paidOrder.items)
         ? paidOrder.items.map((it) => ({ variant_id: it.variant_id ? Number(it.variant_id) : null, quantity: Number(it.quantity) }))
         : undefined
     );
-  }, [paidOrderSettled, orderDetails.data, result?.verified_at, orderNumber, completePaidOrder, token, lookupEmail]);
+  }, [paidOrderSettled, orderDetails.data, result?.verified_at, effectiveOrderNumber, completePaidOrder, effectiveToken, effectiveLookupEmail]);
 
   useEffect(() => {
     if (view !== 'paid' || celebrated.current) return;
@@ -167,8 +171,8 @@ function CheckoutCallbackContent() {
 
   // Closed without payment: checkout should start a new order, not resume this one.
   useEffect(() => {
-    if (view === 'cancelled') clearPendingOrder(orderNumber);
-  }, [view, orderNumber]);
+    if (view === 'cancelled') clearPendingOrder(effectiveOrderNumber);
+  }, [view, effectiveOrderNumber]);
 
   // The live status stream, while the payment is pending. Each newer state makes the page ask
   // verify-payment once; a dropped stream reconnects up to MAX_RECONNECTS times, and a refused,
@@ -176,7 +180,7 @@ function CheckoutCallbackContent() {
   const isPending = view === 'pending';
   const liveFailed = live === 'failed';
   useEffect(() => {
-    if (!livePaymentStatus || liveFailed || !hydrated || !orderNumber || !isPending) return;
+    if (!livePaymentStatus || liveFailed || !hydrated || !effectiveOrderNumber || !isPending) return;
     const keepWatching = awaitingConfirmation;
     const controller = new AbortController();
     const key = paymentKeys.status(orderNumber, token ?? null, reference || null);
@@ -195,7 +199,7 @@ function CheckoutCallbackContent() {
     void (async () => {
       setLive('open');
       for (let drops = 0; ; drops++) {
-        const outcome = await openPaymentStream({ baseUrl: API_BASE_URL, orderNumber, token, reference: reference || null, signal: controller.signal, onState });
+        const outcome = await openPaymentStream({ baseUrl: API_BASE_URL, orderNumber: effectiveOrderNumber, token: effectiveToken, reference: reference || null, signal: controller.signal, onState });
         if (outcome === 'aborted' || controller.signal.aborted) return;
         if (outcome === 'time_limit' && keepWatching) {
           drops = -1; // a planned end, not a drop: open the next stream
@@ -214,7 +218,7 @@ function CheckoutCallbackContent() {
       }
     })();
     return () => controller.abort();
-  }, [livePaymentStatus, liveFailed, hydrated, orderNumber, isPending, awaitingConfirmation, token, reference, streamRun, queryClient]);
+  }, [livePaymentStatus, liveFailed, hydrated, effectiveOrderNumber, isPending, awaitingConfirmation, effectiveToken, reference, streamRun, queryClient, orderNumber, token]);
 
   const checkAgain = async () => {
     if (!orderNumber) return null;
@@ -232,6 +236,19 @@ function CheckoutCallbackContent() {
     window.history.replaceState(null, '', `/checkout/callback?order=${encodeURIComponent(orderNumber)}${reference ? `&reference=${encodeURIComponent(reference)}` : ''}`);
   }, [orderNumber, reference, searchParams]);
 
+  // Keep address bar canonical once the order number is confirmed
+  useEffect(() => {
+    if (!hydrated || !result?.order_number || !reference) return;
+    const currentOrder = searchParams.get('order');
+    if (!currentOrder || currentOrder !== result.order_number) {
+      window.history.replaceState(
+        null,
+        '',
+        `/checkout/callback?order=${encodeURIComponent(result.order_number)}&reference=${encodeURIComponent(reference)}`
+      );
+    }
+  }, [hydrated, result?.order_number, reference, searchParams]);
+
   // Back from the gateway with the page restored as it was left: the button is free again.
   useEffect(() => {
     const onPageShow = (e: PageTransitionEvent) => {
@@ -242,27 +259,32 @@ function CheckoutCallbackContent() {
   }, []);
 
   const handleRetryPayment = async (retryMethod: string) => {
-    if (!orderNumber) return;
+    const targetOrderNumber = effectiveOrderNumber || orderNumber;
+    if (!targetOrderNumber) return;
     setRetrying(retryMethod);
     setRetryError(null);
     const whatsappTab = retryMethod === 'whatsapp' ? window.open('about:blank', '_blank') : null;
     try {
+      const isGateway = retryMethod === 'monnify' || retryMethod === 'kora';
+      const redirectUrl = isGateway
+        ? `${window.location.origin}/checkout/callback`
+        : `${window.location.origin}/checkout/callback?order=${encodeURIComponent(targetOrderNumber)}`;
       const res = await apiInitializePayment(
-        orderNumber,
-        token,
-        `${window.location.origin}/checkout/callback?order=${encodeURIComponent(orderNumber)}`,
+        targetOrderNumber,
+        effectiveToken || undefined,
+        redirectUrl,
         retryMethod,
-        token ? undefined : lookupEmail
+        effectiveToken ? undefined : (effectiveLookupEmail || undefined)
       );
       if (retryMethod === 'whatsapp') {
         const url = buildWhatsAppInvoiceUrl(
-          order ? whatsAppOrderFrom(order) : { order_number: orderNumber, grand_total: Number(res.amount) },
+          order ? whatsAppOrderFrom(order) : { order_number: targetOrderNumber, grand_total: Number(res.amount) },
           supportPhone
         );
         if (!url) throw new Error('The store has no WhatsApp number at the moment. Please choose another way to pay, or contact the store.');
         if (whatsappTab) whatsappTab.location.href = url;
         else window.location.href = url;
-        markInvoiceSent(orderNumber);
+        markInvoiceSent(targetOrderNumber);
         setIsRetrying(false);
         return;
       }
@@ -288,7 +310,11 @@ function CheckoutCallbackContent() {
       // was sent (it emails the admins). The page then shows "Awaiting confirmation" and opens the
       // receipt once the store confirms.
       try {
-        await apiMarkPaymentSent(orderNumber, token, token ? undefined : lookupEmail);
+        await apiMarkPaymentSent(
+          effectiveOrderNumber || orderNumber,
+          effectiveToken || undefined,
+          effectiveToken ? undefined : (effectiveLookupEmail || undefined)
+        );
         void checkAgain();
         return;
       } catch (err) {
@@ -306,7 +332,7 @@ function CheckoutCallbackContent() {
     try {
       const dataUrl = await toJpeg(node, { quality: 0.95, backgroundColor: '#FFFFFF', pixelRatio: 2 });
       const link = document.createElement('a');
-      link.download = `${SHOP_FILE_NAME}-Receipt-${orderNumber}.jpeg`;
+      link.download = `${SHOP_FILE_NAME}-Receipt-${effectiveOrderNumber || orderNumber}.jpeg`;
       link.href = dataUrl;
       link.click();
     } catch {
@@ -345,10 +371,10 @@ function CheckoutCallbackContent() {
           disabled={isRetrying !== false}
           className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-50"
         >
-          {isRetrying === payNowGateway ? 'Opening payment…' : 'Pay now'}
+          {isRetrying === payNowGateway ? 'Opening paymentâ€¦' : 'Pay now'}
         </button>
       )}
-      {whatsappEnabled && (invoiceSent ? (
+      {whatsappEnabled && (effectiveInvoiceSent ? (
         <>
           <button
             type="button"
@@ -356,7 +382,7 @@ function CheckoutCallbackContent() {
             disabled={isRefreshing}
             className={`w-full text-white font-semibold py-3 rounded-full text-sm disabled:opacity-60 ${awaitingFlash ? 'bg-amber-600' : 'bg-[#1DA851] hover:bg-[#178a43]'}`}
           >
-            {isRefreshing ? 'Checking…' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
+            {isRefreshing ? 'Checkingâ€¦' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
           </button>
           <button type="button" onClick={() => void handleRetryPayment('whatsapp')} disabled={isRetrying !== false} className="w-full text-xs text-neutral-700 underline hover:no-underline disabled:opacity-50">
             Send the order number on WhatsApp again
@@ -369,7 +395,7 @@ function CheckoutCallbackContent() {
           disabled={isRetrying !== false}
           className="w-full border border-[#1DA851] text-[#178a43] bg-white hover:bg-emerald-50 font-semibold py-3 rounded-full text-sm disabled:opacity-50"
         >
-          {isRetrying === 'whatsapp' ? 'Opening WhatsApp…' : 'Pay via WhatsApp (bank transfer)'}
+          {isRetrying === 'whatsapp' ? 'Opening WhatsAppâ€¦' : 'Pay via WhatsApp (bank transfer)'}
         </button>
       ))}
     </div>
@@ -383,7 +409,7 @@ function CheckoutCallbackContent() {
         {view === 'checking' && (
           <div className="py-12 space-y-4" role="status">
             <div className="w-14 h-14 border-4 border-black/10 border-t-black rounded-full animate-spin mx-auto" aria-hidden="true" />
-            <h1 className="text-xl font-bold text-black">Checking your payment…</h1>
+            <h1 className="text-xl font-bold text-black">Checking your paymentâ€¦</h1>
             <p className="text-sm text-neutral-700 max-w-sm mx-auto">We confirm every payment directly with the payment provider.</p>
           </div>
         )}
@@ -421,7 +447,7 @@ function CheckoutCallbackContent() {
               <button type="button" onClick={() => void checkAgain()} className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm">
                 Try again
               </button>
-              <Link href={`/track-order${orderNumber ? `?order=${encodeURIComponent(orderNumber)}` : ''}`} className="w-full bg-neutral-100 hover:bg-neutral-200 font-semibold py-3 rounded-full text-sm">
+              <Link href={`/track-order${effectiveOrderNumber || orderNumber ? `?order=${encodeURIComponent(effectiveOrderNumber || orderNumber)}` : ''}`} className="w-full bg-neutral-100 hover:bg-neutral-200 font-semibold py-3 rounded-full text-sm">
                 Track order with email
               </Link>
             </div>
@@ -445,7 +471,7 @@ function CheckoutCallbackContent() {
               <div>
                 <h1 className="text-2xl font-extrabold text-black">Payment confirmed</h1>
                 <p className="text-sm text-neutral-700 mt-0.5">
-                  Order <strong className="font-mono text-black">{orderNumber}</strong>
+                  Order <strong className="font-mono text-black">{effectiveOrderNumber}</strong>
                 </p>
               </div>
 
@@ -453,15 +479,15 @@ function CheckoutCallbackContent() {
                 {order && order.items.length > 0 && (
                   <ul className="divide-y divide-neutral-100">
                     {order.items.map((item) => {
-                      // Only the options the product uses ("M · Navy"); nothing for one with none.
-                      const options = optionsText(item.variant_options?.size, item.variant_options?.color, ' · ');
+                      // Only the options the product uses ("M Â· Navy"); nothing for one with none.
+                      const options = optionsText(item.variant_options?.size, item.variant_options?.color, ' Â· ');
                       return (
                         <li key={item.id} className="py-2 flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-semibold text-black truncate">{item.item_name}</p>
                             <p className="text-xs text-neutral-600">
                               Qty {item.quantity}
-                              {options ? ` · ${options}` : ''}
+                              {options ? ` Â· ${options}` : ''}
                             </p>
                             {item.variant_options?.warranty && (
                               <p className="text-xs text-neutral-600">Warranty: {item.variant_options.warranty}</p>
@@ -518,7 +544,7 @@ function CheckoutCallbackContent() {
 
             <div className="space-y-3">
               <Link
-                href={`/track-order?order=${encodeURIComponent(orderNumber)}`}
+                href={`/track-order?order=${encodeURIComponent(effectiveOrderNumber || orderNumber)}`}
                 className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-bold py-3.5 rounded-full text-sm shadow-md flex items-center justify-center gap-2"
               >
                 <span>Track your order</span>
@@ -536,7 +562,7 @@ function CheckoutCallbackContent() {
                   <a
                     href={buildWhatsAppReceiptUrl(
                       {
-                        ...(order ? whatsAppOrderFrom(order) : { order_number: orderNumber }),
+                        ...(order ? whatsAppOrderFrom(order) : { order_number: effectiveOrderNumber || orderNumber }),
                         grand_total: Number(result?.amount ?? order?.grand_total ?? 0),
                       },
                       supportPhone
@@ -595,12 +621,12 @@ function CheckoutCallbackContent() {
             {awaitingConfirmation ? (
               <div className="flex items-center justify-center gap-2.5" role="status">
                 <div className="w-5 h-5 border-[3px] border-amber-200 border-t-amber-600 rounded-full animate-spin" aria-hidden="true" />
-                <p className="text-sm font-medium text-amber-900">Checking every few seconds…</p>
+                <p className="text-sm font-medium text-amber-900">Checking every few secondsâ€¦</p>
               </div>
             ) : checkingAutomatically && (
               <p className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-xs font-medium border border-amber-200">
                 <span className={`w-2 h-2 rounded-full bg-amber-600 ${isRefreshing ? 'animate-ping' : ''}`} />
-                Checking automatically…
+                Checking automaticallyâ€¦
               </p>
             )}
             <div className="flex flex-col gap-2.5">
@@ -611,7 +637,7 @@ function CheckoutCallbackContent() {
                   disabled={isRefreshing}
                   className={`w-full text-white font-semibold py-3 rounded-full text-sm disabled:opacity-60 ${awaitingFlash ? 'bg-amber-600' : 'bg-[#1DA851] hover:bg-[#178a43]'}`}
                 >
-                  {isRefreshing ? 'Checking…' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
+                  {isRefreshing ? 'Checkingâ€¦' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
                 </button>
               ) : (
                 <button
@@ -620,7 +646,7 @@ function CheckoutCallbackContent() {
                   disabled={isRefreshing}
                   className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-60"
                 >
-                  {isRefreshing ? 'Checking…' : 'Check again'}
+                  {isRefreshing ? 'Checkingâ€¦' : 'Check again'}
                 </button>
               )}
               {!awaitingConfirmation && (result?.status === 'not_started' || !checkingAutomatically) && retryPanel}
@@ -680,7 +706,7 @@ function CheckoutCallbackContent() {
             </p>
             {awaitingWhatsApp && (hasWhatsApp ? (
               <a
-                href={buildWhatsAppMessageUrl(`Hello! Order ${orderNumber} was cancelled, but I sent the transfer. Here is my bank receipt.`, supportPhone)}
+                href={buildWhatsAppMessageUrl(`Hello! Order ${effectiveOrderNumber || orderNumber} was cancelled, but I sent the transfer. Here is my bank receipt.`, supportPhone)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full bg-white text-black border border-black/15 hover:bg-neutral-50 font-semibold py-3 px-5 rounded-full text-sm flex items-center justify-center gap-2.5"
@@ -691,7 +717,7 @@ function CheckoutCallbackContent() {
             ) : contactStoreLink)}
             <Link
               href="/cart"
-              onClick={() => clearPendingOrder(orderNumber)}
+              onClick={() => clearPendingOrder(effectiveOrderNumber || orderNumber)}
               className="block w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm"
             >
               Go to cart
@@ -733,7 +759,7 @@ export default function CheckoutCallbackPage() {
       fallback={
         <div className="min-h-[70vh] flex items-center justify-center">
           <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin" aria-hidden="true" />
-          <span className="sr-only">Loading…</span>
+          <span className="sr-only">Loadingâ€¦</span>
         </div>
       }
     >

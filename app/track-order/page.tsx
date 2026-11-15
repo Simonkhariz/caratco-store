@@ -242,7 +242,6 @@ function TrackOrderContent() {
     return provider.charAt(0).toUpperCase() + provider.slice(1);
   };
 
-
   const handleInitiatePayment = async (gatewayOverride: string) => {
     if (!order) return;
     const gateway = gatewayOverride;
@@ -256,7 +255,10 @@ function TrackOrderContent() {
 
     try {
       const guestToken = readGuestToken(order.order_number);
-      const redirectUrl = `${window.location.origin}/checkout/callback?order=${encodeURIComponent(order.order_number)}`;
+      const isGateway = gateway === 'monnify' || gateway === 'kora';
+      const redirectUrl = isGateway
+        ? `${window.location.origin}/checkout/callback`
+        : `${window.location.origin}/checkout/callback?order=${encodeURIComponent(order.order_number)}`;
 
       const res = await apiInitializePayment(order.order_number, guestToken, redirectUrl, gateway, guestToken ? undefined : lookupEmail || undefined);
       if (gateway === 'whatsapp') {

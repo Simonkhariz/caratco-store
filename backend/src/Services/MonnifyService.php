@@ -187,11 +187,13 @@ class MonnifyService
             return $this->statusResponse($payment, 'local_database');
         }
 
+        $merchantRef = !empty($payment['provider_reference']) ? $payment['provider_reference'] : $ref;
+
         try {
             $token = $this->getAccessToken();
             $result = $this->executeHttpRequest(
                 'GET',
-                "{$this->baseUrl}/api/v2/merchant/transactions/query?paymentReference=" . urlencode($ref),
+                "{$this->baseUrl}/api/v2/merchant/transactions/query?paymentReference=" . urlencode($merchantRef),
                 [
                     'Authorization: Bearer ' . $token,
                     'Accept: application/json',
@@ -203,13 +205,29 @@ class MonnifyService
             $json = json_decode($result['body'], true);
             if ($result['error'] === null && $result['status_code'] >= 200 && $result['status_code'] < 300
                 && is_array($json) && is_array($json['responseBody'] ?? null)) {
-                $this->applyStatus($ref, $json['responseBody'], 'query');
+                $this->applyStatus($merchantRef, $json['responseBody'], 'query');
+            } elseif (str_contains($ref, '|') || str_starts_with($ref, 'MNFY|')) {
+                $result2 = $this->executeHttpRequest(
+                    'GET',
+                    "{$this->baseUrl}/api/v2/merchant/transactions/query?transactionReference=" . urlencode($ref),
+                    [
+                        'Authorization: Bearer ' . $token,
+                        'Accept: application/json',
+                    ],
+                    null,
+                    15
+                );
+                $json2 = json_decode($result2['body'], true);
+                if ($result2['error'] === null && $result2['status_code'] >= 200 && $result2['status_code'] < 300
+                    && is_array($json2) && is_array($json2['responseBody'] ?? null)) {
+                    $this->applyStatus($merchantRef, $json2['responseBody'], 'query');
+                }
             }
         } catch (RuntimeException $e) {
             error_log('[Monnify Query] ' . $e->getMessage());
         }
 
-        return $this->statusResponse($this->loadPaymentWithOrder($ref), 'monnify_query');
+        return $this->statusResponse($this->loadPaymentWithOrder($merchantRef), 'monnify_query');
     }
 
     /**
@@ -336,6 +354,24 @@ class MonnifyService
             's',
             [$ref]
         );
+
+        if ($payment === null && (str_contains($ref, '|') || str_starts_with($ref, 'MNFY|') || strlen($ref) >= 8)) {
+            $payment = $this->db->fetchOne(
+                "SELECT p.*, o.order_number, o.order_status, o.grand_total, o.currency AS order_currency
+                 FROM `payments` p
+                 JOIN `orders` o ON p.order_id = o.id
+                 WHERE p.provider = 'monnify'
+                   AND p.provider_payload_redacted IS NOT NULL
+                   AND (
+                     JSON_UNQUOTE(JSON_EXTRACT(p.provider_payload_redacted, '$.transactionReference')) = ?
+                     OR JSON_UNQUOTE(JSON_EXTRACT(p.provider_payload_redacted, '$.transaction_reference')) = ?
+                     OR JSON_UNQUOTE(JSON_EXTRACT(p.provider_payload_redacted, '$.paymentReference')) = ?
+                   )
+                 LIMIT 1",
+                'sss',
+                [$ref, $ref, $ref]
+            );
+        }
 
         if ($payment === null) {
             throw new InvalidArgumentException("No Monnify payment found matching reference '{$ref}'.");

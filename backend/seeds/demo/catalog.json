@@ -94,37 +94,37 @@
       "name": "Rings",
       "slug": "rings",
       "description": "Bands, stacking rings and stone rings in sizes 6 to 10.",
-      "image": "cat-rings.webp"
+      "image": "https://images.unsplash.com/photo-1633934542430-0905ccb5f050?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTZ8fGdvbGQlMjByaW5nJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzMzR8MA&ixlib=rb-4.1.0&w=900&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     },
     {
       "name": "Necklaces",
       "slug": "necklaces",
       "description": "Chains, pearls and pendants for every neckline.",
-      "image": "cat-necklaces.webp"
+      "image": "https://images.unsplash.com/photo-1705872907488-1a7a35fdc2c3?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjV8fGdvbGQlMjBuZWNrbGFjZSUyMGpld2Vscnl8ZW58MXx8fHwxNzk0NDU2MzUxfDA&ixlib=rb-4.1.0&w=900&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     },
     {
       "name": "Earrings",
       "slug": "earrings",
       "description": "Hoops, drops and studs, light enough for a full day.",
-      "image": "cat-earrings.webp"
+      "image": "https://images.unsplash.com/photo-1652766540048-de0a878a3266?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8Mnx8ZWFycmluZ3MlMjBqZXdlbHJ5fGVufDF8fHx8MTc5NDQ1NjM2OHww&ixlib=rb-4.1.0&w=900&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     },
     {
       "name": "Bracelets",
       "slug": "bracelets",
       "description": "Link bracelets and charm bracelets in two lengths.",
-      "image": "cat-bracelets.webp"
+      "image": "https://images.unsplash.com/photo-1763029513623-37d488cb97b1?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjF8fGJyYWNlbGV0JTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzODd8MA&ixlib=rb-4.1.0&w=900&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     },
     {
       "name": "Watches",
       "slug": "watches",
       "description": "Steel watches in three case sizes, with quartz movements.",
-      "image": "cat-watches.webp"
+      "image": "https://images.unsplash.com/photo-1619976491498-f2dadb25fb3b?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTl8fHdyaXN0JTIwd2F0Y2h8ZW58MXx8fHwxNzk0NDU2NDA0fDA&ixlib=rb-4.1.0&w=900&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     },
     {
       "name": "Sets",
       "slug": "sets",
       "description": "Matching pieces boxed together, ready to give.",
-      "image": "cat-sets.webp"
+      "image": "https://images.unsplash.com/photo-1790159264948-2e801ea7e9b2?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTl8fGpld2VscnklMjBnaWZ0JTIwYm94fGVufDF8fHx8MTc5NDQ1NjQ0MXww&ixlib=rb-4.1.0&w=900&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     }
   ],
   "banners": [
@@ -133,21 +133,21 @@
       "subtitle": "Plated steel and sterling silver pieces you can wear daily. Rings, chains and hoops from ₦4,500.",
       "cta_text": "Shop rings",
       "cta_url": "/category?cat=rings",
-      "image": "banner-1.webp"
+      "image": "https://images.unsplash.com/photo-1611170947204-5ab96c3e37a1?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTF8fGpld2Vscnl8ZW58MXwwfHx8MTc5NDQ1NjQ1OXww&ixlib=rb-4.1.0&w=1600&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     },
     {
       "title": "PEARLS AND STONES FOR BRIDES",
       "subtitle": "Freshwater pearls and cubic zirconia, matched into sets for the big day and the bridal party.",
       "cta_text": "Shop sets",
       "cta_url": "/category?cat=sets",
-      "image": "banner-2.webp"
+      "image": "https://images.unsplash.com/photo-1608547000023-74beb9fe563a?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjF8fHBlYXJsJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTY0MjJ8MA&ixlib=rb-4.1.0&w=1600&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     },
     {
       "title": "WATCHES FROM ₦28,000",
       "subtitle": "Steel cases in 36mm, 40mm and 42mm. Quartz movements, easy to wear and easy to service.",
       "cta_text": "Shop watches",
       "cta_url": "/category?cat=watches",
-      "image": "banner-3.webp"
+      "image": "https://images.unsplash.com/photo-1585477078060-d06978689e34?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MzB8fHdyaXN0JTIwd2F0Y2h8ZW58MXx8fHwxNzk0NDU2NDA0fDA&ixlib=rb-4.1.0&w=1600&h=900&fit=crop&crop=entropy&q=80&fm=jpg"
     }
   ],
   "products": [
@@ -184,7 +184,7 @@
         }
       ],
       "images": [
-        "p-halo-stack-ring-1.webp"
+        "https://images.unsplash.com/photo-1543294001-f7cd5d7fb516?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MXx8Z29sZCUyMHJpbmclMjBqZXdlbHJ5fGVufDF8fHx8MTc5NDQ1NjMzNHww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -257,7 +257,7 @@
         }
       ],
       "images": [
-        "p-plain-band-ring-1.webp"
+        "https://images.unsplash.com/photo-1589207212797-cfd546dea0fe?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8M3x8Z29sZCUyMHJpbmclMjBqZXdlbHJ5fGVufDF8fHx8MTc5NDQ1NjMzNHww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -330,8 +330,8 @@
         }
       ],
       "images": [
-        "p-solitaire-bridal-ring-1.webp",
-        "p-solitaire-bridal-ring-2.webp"
+        "https://images.unsplash.com/photo-1720093601709-66ce9c0068a1?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTB8fGdvbGQlMjByaW5nJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzMzR8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg",
+        "https://images.unsplash.com/photo-1787520300787-b24e79ec9452?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjN8fGdvbGQlMjByaW5nJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzMzR8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -390,7 +390,7 @@
         }
       ],
       "images": [
-        "p-cocktail-stone-ring-1.webp"
+        "https://images.unsplash.com/photo-1776261762008-d78c9b6c4ad6?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8Mjd8fGdvbGQlMjByaW5nJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzMzR8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -456,7 +456,7 @@
         }
       ],
       "images": [
-        "p-paperclip-chain-necklace-1.webp"
+        "https://images.unsplash.com/photo-1617071380442-97e4d5a711e6?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjR8fGNoYWluJTIwbmVja2xhY2V8ZW58MXx8fHwxNzk0NTI5OTk3fDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -522,7 +522,7 @@
         }
       ],
       "images": [
-        "p-pearl-strand-necklace-1.webp"
+        "https://images.unsplash.com/photo-1654699991520-aaaf4dd2608b?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MXx8cGVhcmwlMjBqZXdlbHJ5fGVufDF8fHx8MTc5NDQ1NjQyMnww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -581,8 +581,8 @@
         }
       ],
       "images": [
-        "p-heart-locket-necklace-1.webp",
-        "p-heart-locket-necklace-2.webp"
+        "https://images.unsplash.com/photo-1761210875101-1273b9ae5600?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjZ8fGdvbGQlMjBuZWNrbGFjZSUyMGpld2Vscnl8ZW58MXx8fHwxNzk0NDU2MzUxfDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg",
+        "https://images.unsplash.com/photo-1708221270146-7aa63e1e126a?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8Mjh8fGdvbGQlMjBuZWNrbGFjZSUyMGpld2Vscnl8ZW58MXx8fHwxNzk0NDU2MzUxfDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -648,8 +648,8 @@
         }
       ],
       "images": [
-        "p-tennis-collar-necklace-1.webp",
-        "p-tennis-collar-necklace-2.webp"
+        "https://images.unsplash.com/photo-1721103418939-5112f0ccfac8?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTF8fGdvbGQlMjBuZWNrbGFjZSUyMGpld2Vscnl8ZW58MXx8fHwxNzk0NDU2MzUxfDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg",
+        "https://images.unsplash.com/photo-1758995115682-1452a1a9e35b?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTZ8fGdvbGQlMjBuZWNrbGFjZSUyMGpld2Vscnl8ZW58MXx8fHwxNzk0NDU2MzUxfDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -708,7 +708,7 @@
         }
       ],
       "images": [
-        "p-small-hoops-1.webp"
+        "https://images.unsplash.com/photo-1631982681280-8ca46226a5c9?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjR8fGVhcnJpbmdzJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzNjh8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -767,7 +767,7 @@
         }
       ],
       "images": [
-        "p-pearl-drop-earrings-1.webp"
+        "https://images.unsplash.com/photo-1763628212781-7d52844cf358?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTB8fHBlYXJsJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTY0MjJ8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -819,7 +819,7 @@
         }
       ],
       "images": [
-        "p-chandelier-earrings-1.webp"
+        "https://images.unsplash.com/photo-1665159882377-385d68d2bdff?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8N3x8ZWFycmluZ3MlMjBqZXdlbHJ5fGVufDF8fHx8MTc5NDQ1NjM2OHww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -864,8 +864,8 @@
         }
       ],
       "images": [
-        "p-cuban-link-bracelet-1.webp",
-        "p-cuban-link-bracelet-2.webp"
+        "https://images.unsplash.com/photo-1626122738142-bbd66f671eca?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8OHx8YnJhY2VsZXQlMjBqZXdlbHJ5fGVufDF8fHx8MTc5NDQ1NjM4N3ww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg",
+        "https://images.unsplash.com/photo-1602527428055-a2526fabdc9f?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTB8fGJyYWNlbGV0JTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzODd8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -924,7 +924,7 @@
         }
       ],
       "images": [
-        "p-tennis-bracelet-1.webp"
+        "https://images.unsplash.com/photo-1619119069152-a2b331eb392a?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8Mnx8YnJhY2VsZXQlMjBqZXdlbHJ5fGVufDF8fHx8MTc5NDQ1NjM4N3ww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -983,7 +983,7 @@
         }
       ],
       "images": [
-        "p-charm-bracelet-1.webp"
+        "https://images.unsplash.com/photo-1598472142296-b9e8f89bd9a5?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTV8fGJyYWNlbGV0JTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTYzODd8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -1049,8 +1049,8 @@
         }
       ],
       "images": [
-        "p-slim-dress-watch-1.webp",
-        "p-slim-dress-watch-2.webp"
+        "https://images.unsplash.com/photo-1524592094714-0f0654e20314?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8OXx8d3Jpc3QlMjB3YXRjaHxlbnwxfHx8fDE3OTQ0NTY0MDR8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg",
+        "https://images.unsplash.com/photo-1689287428096-7e1dcc705a5c?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjB8fHdyaXN0JTIwd2F0Y2h8ZW58MXx8fHwxNzk0NDU2NDA0fDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -1120,7 +1120,7 @@
         }
       ],
       "images": [
-        "p-steel-chronograph-watch-1.webp"
+        "https://images.unsplash.com/photo-1609587312208-cea54be969e7?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTB8fHdyaXN0JTIwd2F0Y2h8ZW58MXx8fHwxNzk0NDU2NDA0fDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -1179,7 +1179,7 @@
         }
       ],
       "images": [
-        "p-mesh-strap-watch-1.webp"
+        "https://images.unsplash.com/photo-1760532467646-b9e466403862?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8NXx8bWVzaCUyMHdhdGNofGVufDF8fHx8MTc5NDUzMDExN3ww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -1249,7 +1249,7 @@
         }
       ],
       "images": [
-        "p-two-tone-steel-watch-1.webp"
+        "https://images.unsplash.com/photo-1623998021661-dc7555b2213d?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTN8fHdyaXN0JTIwd2F0Y2h8ZW58MXx8fHwxNzk0NDU2NDA0fDA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -1308,8 +1308,8 @@
         }
       ],
       "images": [
-        "p-bridal-pearl-set-1.webp",
-        "p-bridal-pearl-set-2.webp"
+        "https://images.unsplash.com/photo-1704957205327-9fbd44d683b7?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTV8fHBlYXJsJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTY0MjJ8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg",
+        "https://images.unsplash.com/photo-1704957205218-d436eac4c607?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MTR8fHBlYXJsJTIwamV3ZWxyeXxlbnwxfHx8fDE3OTQ0NTY0MjJ8MA&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {
@@ -1361,7 +1361,7 @@
         }
       ],
       "images": [
-        "p-gift-box-pendant-set-1.webp"
+        "https://images.unsplash.com/photo-1769805222409-b493ba61703b?ixid=M3wxMTMxMTE3fDB8MXxzZWFyY2h8MjB8fGpld2VscnklMjBnaWZ0JTIwYm94fGVufDF8fHx8MTc5NDQ1NjQ0MXww&ixlib=rb-4.1.0&w=1000&h=1000&fit=crop&crop=entropy&q=80&fm=jpg"
       ],
       "variants": [
         {

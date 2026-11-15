@@ -607,7 +607,10 @@ function CheckoutSession({
     setInitializingMethod(selectedMethod);
     setPaymentError(null);
 
-    const redirectUrl = `${window.location.origin}/checkout/callback?order=${encodeURIComponent(order.order_number)}`;
+    const isGateway = selectedMethod === 'monnify' || selectedMethod === 'kora';
+    const redirectUrl = isGateway
+      ? `${window.location.origin}/checkout/callback`
+      : `${window.location.origin}/checkout/callback?order=${encodeURIComponent(order.order_number)}`;
     // Open the WhatsApp tab synchronously (inside the click) so pop-up blockers allow it.
     const whatsappTab = selectedMethod === 'whatsapp' ? window.open('about:blank', '_blank') : null;
 

@@ -1386,11 +1386,14 @@ export async function apiGetOrder(
   const headers: Record<string, string> = {};
   const token = typeof verification === 'string' ? verification : verification?.token;
   const email = typeof verification === 'string' ? undefined : verification?.email;
+  const reference = typeof verification === 'string' ? undefined : verification?.reference;
 
   if (token) headers['X-Guest-Access-Token'] = token;
   if (email) headers['X-Order-Email'] = email.trim();
+  if (reference) headers['X-Payment-Reference'] = reference.trim();
 
-  return fetchFromApi<ApiOrder>(`/checkout/orders/${encodeURIComponent(orderNumber)}`, { headers, signal });
+  const query = reference ? `?reference=${encodeURIComponent(reference.trim())}` : '';
+  return fetchFromApi<ApiOrder>(`/checkout/orders/${encodeURIComponent(orderNumber)}${query}`, { headers, signal });
 }
 
 /**

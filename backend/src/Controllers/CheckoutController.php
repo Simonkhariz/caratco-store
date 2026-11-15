@@ -244,7 +244,18 @@ class CheckoutController
             }
         }
 
-        if ($order === null || !$this->canViewOrder($order, true)) {
+        $paymentRow = null;
+        if ($order === null && $searchable) {
+            // A gateway payment reference directly identifies the order
+            $paymentRow = $this->findPaymentAttempt($lookupCode);
+            if ($paymentRow !== null) {
+                $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `id` = ?", 'i', [(int) $paymentRow['order_id']]);
+            }
+        }
+
+        $explicitRef = ($paymentRow !== null) ? $lookupCode : '';
+
+        if ($order === null || !$this->canViewOrder($order, true, false, '', $explicitRef)) {
             RateLimiter::hit('order_lookup_fail', $ip, 900);
             Response::error($notFound, 404, 'ORDER_NOT_FOUND');
         }
@@ -389,15 +400,22 @@ class CheckoutController
      */
     public function initializePayment(array $params): void
     {
-        $orderNumber = trim($params['orderNumber'] ?? '');
+        $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         if ($orderNumber === '') {
             Response::error('Order number is required.', 422, 'VALIDATION_ERROR');
         }
 
         $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `order_number` = ?", 's', [$orderNumber]);
+        if ($order === null && $orderNumber !== '') {
+            $paymentByRef = $this->findPaymentAttempt($orderNumber);
+            if ($paymentByRef !== null) {
+                $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `id` = ?", 'i', [(int) $paymentByRef['order_id']]);
+            }
+        }
         if ($order === null) {
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
+        $orderNumber = (string) $order['order_number'];
 
         RateLimiter::attempt('payment_init', RequestContext::clientIp(), 20, 600);
         $body = JsonBodyMiddleware::getBody();
@@ -414,16 +432,38 @@ class CheckoutController
 
         // The return URL is always our own callback page; a client-supplied URL is only accepted
         // when it points back at the storefront (no open redirect). The guest token never goes in it.
-        $frontendUrl = Env::frontendUrl();
-        $redirectUrl = $frontendUrl . '/checkout/callback?order=' . urlencode($orderNumber);
+        $defaultFrontend = Env::frontendUrl();
+        $targetOrigin = $defaultFrontend;
         $requestedRedirect = trim((string) ($body['redirect_url'] ?? ''));
-        if ($requestedRedirect !== '' && str_starts_with($requestedRedirect, $frontendUrl . '/')) {
-            $parts = parse_url($requestedRedirect);
-            parse_str($parts['query'] ?? '', $query);
-            unset($query['token']);
-            $query['order'] = $orderNumber;
-            $redirectUrl = $frontendUrl . ($parts['path'] ?? '/checkout/callback') . '?' . http_build_query($query);
+
+        if ($requestedRedirect !== '') {
+            $parsed = parse_url($requestedRedirect);
+            $parsedHost = strtolower($parsed['host'] ?? '');
+            $parsedScheme = strtolower($parsed['scheme'] ?? '');
+            $parsedPort = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+            $originCandidate = "{$parsedScheme}://{$parsedHost}{$parsedPort}";
+
+            $allowedOriginsRaw = Env::get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000');
+            $allowedOrigins = array_map(fn ($o) => rtrim(strtolower(trim($o)), '/'), explode(',', $allowedOriginsRaw));
+            $allowedOrigins[] = rtrim(strtolower($defaultFrontend), '/');
+
+            $isAllowedOrigin = in_array(rtrim($originCandidate, '/'), $allowedOrigins, true);
+            if (!$isAllowedOrigin && !Env::isProduction()) {
+                if (in_array($parsedHost, ['localhost', '127.0.0.1', '::1'], true) || str_ends_with($parsedHost, '.localhost')) {
+                    $isAllowedOrigin = true;
+                }
+            }
+
+            if ($isAllowedOrigin && in_array($parsedScheme, ['http', 'https'], true)) {
+                $targetOrigin = $originCandidate;
+            }
         }
+
+        // Automated gateways (Monnify and Kora) append their own reference query parameters
+        // (?paymentReference=... or ?reference=...) using string concatenation. Providing a clean
+        // path prevents malformed double-'?' URLs on redirect. WhatsApp keeps ?order=.
+        $cleanRedirectUrl = $targetOrigin . '/checkout/callback';
+        $redirectUrl = $targetOrigin . '/checkout/callback?order=' . urlencode($orderNumber);
 
         $gateway = strtolower(trim((string) ($body['gateway'] ?? '')));
         if (!in_array($gateway, ['kora', 'monnify', 'whatsapp'], true)) {
@@ -435,10 +475,10 @@ class CheckoutController
 
         try {
             if ($gateway === 'monnify') {
-                $result = (new MonnifyService($this->db))->initializeCheckout($orderNumber, $redirectUrl);
+                $result = (new MonnifyService($this->db))->initializeCheckout($orderNumber, $cleanRedirectUrl);
                 Response::success($result, 'Monnify payment session initialized successfully.');
             } elseif ($gateway === 'kora') {
-                $result = (new KoraService($this->db))->initializeCheckout($orderNumber, $redirectUrl);
+                $result = (new KoraService($this->db))->initializeCheckout($orderNumber, $cleanRedirectUrl);
                 Response::success($result, 'Kora payment session initialized successfully.');
             } else {
                 // Manual transfer arranged over WhatsApp: keep the stock reserved longer while the
@@ -480,19 +520,30 @@ class CheckoutController
      */
     public function verifyPayment(array $params): void
     {
-        $orderNumber = trim($params['orderNumber'] ?? '');
+        $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         if ($orderNumber === '') {
             Response::error('Order number is required.', 422, 'VALIDATION_ERROR');
         }
 
+        $rawOrderParam = $orderNumber;
         $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `order_number` = ?", 's', [$orderNumber]);
+        if ($order === null && $orderNumber !== '') {
+            $paymentByRef = $this->findPaymentAttempt($orderNumber);
+            if ($paymentByRef !== null) {
+                $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `id` = ?", 'i', [(int) $paymentByRef['order_id']]);
+            }
+        }
         if ($order === null) {
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
+        $orderNumber = (string) $order['order_number'];
 
         RateLimiter::attempt('payment_verify', RequestContext::clientIp(), 240, 600);
 
         $customRef = $this->returnReference();
+        if ($customRef === '' && isset($paymentByRef) && $paymentByRef !== null) {
+            $customRef = $rawOrderParam;
+        }
         $this->guardEmailGuesses();
         if (!$this->canSeePaymentStatus($order, $customRef)) {
             $this->countEmailGuess();
@@ -503,11 +554,7 @@ class CheckoutController
         // successful payment, else the newest attempt.
         $payment = null;
         if ($customRef !== '') {
-            $payment = $this->db->fetchOne(
-                "SELECT * FROM `payments` WHERE `order_id` = ? AND `provider_reference` = ? LIMIT 1",
-                'is',
-                [(int) $order['id'], $customRef]
-            );
+            $payment = $this->findPaymentAttempt($customRef, (int) $order['id']);
         }
         if ($payment === null) {
             // A confirmed payment first. Then, once the customer said they sent a WhatsApp transfer,
@@ -669,11 +716,18 @@ class CheckoutController
      */
     public function releaseOrder(array $params): void
     {
-        $orderNumber = trim($params['orderNumber'] ?? '');
+        $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         $order = $orderNumber === '' ? null : $this->db->fetchOne("SELECT * FROM `orders` WHERE `order_number` = ?", 's', [$orderNumber]);
+        if ($order === null && $orderNumber !== '') {
+            $paymentByRef = $this->findPaymentAttempt($orderNumber);
+            if ($paymentByRef !== null) {
+                $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `id` = ?", 'i', [(int) $paymentByRef['order_id']]);
+            }
+        }
         if ($order === null) {
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
+        $orderNumber = (string) $order['order_number'];
 
         RateLimiter::attempt('order_release', RequestContext::clientIp(), 30, 600);
         $body = JsonBodyMiddleware::getBody();
@@ -690,11 +744,18 @@ class CheckoutController
 
     public function markPaymentSent(array $params): void
     {
-        $orderNumber = trim($params['orderNumber'] ?? '');
+        $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         $order = $orderNumber === '' ? null : $this->db->fetchOne("SELECT * FROM `orders` WHERE `order_number` = ?", 's', [$orderNumber]);
+        if ($order === null && $orderNumber !== '') {
+            $paymentByRef = $this->findPaymentAttempt($orderNumber);
+            if ($paymentByRef !== null) {
+                $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `id` = ?", 'i', [(int) $paymentByRef['order_id']]);
+            }
+        }
         if ($order === null) {
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
+        $orderNumber = (string) $order['order_number'];
 
         RateLimiter::attempt('payment_claim', RequestContext::clientIp(), 30, 600);
         $body = JsonBodyMiddleware::getBody();
@@ -760,7 +821,7 @@ class CheckoutController
     /** The gateway reference from the return redirect (query string) or the page (header). */
     private function returnReference(): string
     {
-        return trim(urldecode((string) (
+        return trim((string) (
             $_GET['reference'] ??
             $_GET['paymentReference'] ??
             $_GET['payment_reference'] ??
@@ -768,7 +829,7 @@ class CheckoutController
             $_GET['trxref'] ??
             $_SERVER['HTTP_X_PAYMENT_REFERENCE'] ??
             ''
-        )));
+        ));
     }
 
     /**
@@ -783,11 +844,7 @@ class CheckoutController
         if ($this->canViewOrder($order, true)) {
             return true;
         }
-        return $reference !== '' && $this->db->fetchOne(
-            "SELECT `id` FROM `payments` WHERE `order_id` = ? AND `provider_reference` = ? LIMIT 1",
-            'is',
-            [(int) $order['id'], $reference]
-        ) !== null;
+        return $reference !== '' && $this->findPaymentAttempt($reference, (int) $order['id']) !== null;
     }
 
     /**
@@ -806,13 +863,25 @@ class CheckoutController
             Response::error('Live payment status is not switched on.', 404, 'SSE_DISABLED');
         }
         RateLimiter::attempt('sse_open', RequestContext::clientIp(), 20, 600);
-        $orderNumber = trim($params['orderNumber'] ?? '');
+        $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
+        $rawOrderParam = $orderNumber;
         $order = $orderNumber === '' ? null : $this->db->fetchOne("SELECT * FROM `orders` WHERE `order_number` = ?", 's', [$orderNumber]);
+        if ($order === null && $orderNumber !== '') {
+            $paymentByRef = $this->findPaymentAttempt($orderNumber);
+            if ($paymentByRef !== null) {
+                $order = $this->db->fetchOne("SELECT * FROM `orders` WHERE `id` = ?", 'i', [(int) $paymentByRef['order_id']]);
+            }
+        }
         $this->guardEmailGuesses();
-        if ($order === null || !$this->canSeePaymentStatus($order, $this->returnReference())) {
+        $customRef = $this->returnReference();
+        if ($customRef === '' && isset($paymentByRef) && $paymentByRef !== null) {
+            $customRef = $rawOrderParam;
+        }
+        if ($order === null || !$this->canSeePaymentStatus($order, $customRef)) {
             $this->countEmailGuess();
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
+        $orderNumber = (string) $order['order_number'];
 
         $live = new LiveStatus($this->db);
         $slot = $live->claimSlot((int) $order['id'], RequestContext::clientIp());
@@ -906,7 +975,7 @@ class CheckoutController
         }
     }
 
-    private function canViewOrder(array $order, bool $allowEmailMatch, bool $enforceCsrf = false, string $bodyToken = ''): bool
+    private function canViewOrder(array $order, bool $allowEmailMatch, bool $enforceCsrf = false, string $bodyToken = '', string $explicitRef = ''): bool
     {
         $currentUser = $this->resolveOptionalUser($enforceCsrf);
         if ($currentUser !== null && !empty($order['user_id']) && (int) $order['user_id'] === (int) $currentUser['id']) {
@@ -927,6 +996,56 @@ class CheckoutController
             }
         }
 
+        $ref = $this->returnReference();
+        if ($ref === '' && $explicitRef !== '') {
+            $ref = trim($explicitRef);
+        }
+        if ($ref !== '') {
+            $payment = $this->findPaymentAttempt($ref, (int) $order['id']);
+            if ($payment !== null) {
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    /**
+     * Find a payment attempt by merchant provider_reference or gateway transaction reference
+     * (e.g. gateway-issued transactionReference like Monnify MNFY|... or Kora reference).
+     */
+    private function findPaymentAttempt(string $ref, ?int $orderId = null): ?array
+    {
+        $ref = trim($ref);
+        if ($ref === '' || strlen($ref) < 8) {
+            return null;
+        }
+
+        $orderClause = $orderId !== null ? " AND `order_id` = " . (int) $orderId : "";
+
+        // 1. Exact match on provider_reference
+        $row = $this->db->fetchOne(
+            "SELECT * FROM `payments` WHERE `provider_reference` = ?{$orderClause} LIMIT 1",
+            's',
+            [$ref]
+        );
+        if ($row !== null) {
+            return $row;
+        }
+
+        // 2. Exact match inside provider_payload_redacted for gateway transaction reference
+        return $this->db->fetchOne(
+            "SELECT * FROM `payments`
+             WHERE `provider_payload_redacted` IS NOT NULL
+               AND (
+                 JSON_UNQUOTE(JSON_EXTRACT(`provider_payload_redacted`, '$.transactionReference')) = ?
+                 OR JSON_UNQUOTE(JSON_EXTRACT(`provider_payload_redacted`, '$.transaction_reference')) = ?
+                 OR JSON_UNQUOTE(JSON_EXTRACT(`provider_payload_redacted`, '$.paymentReference')) = ?
+                 OR JSON_UNQUOTE(JSON_EXTRACT(`provider_payload_redacted`, '$.reference')) = ?
+               ){$orderClause}
+             LIMIT 1",
+            'ssss',
+            [$ref, $ref, $ref, $ref]
+        );
     }
 }

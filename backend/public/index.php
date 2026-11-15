@@ -175,11 +175,11 @@ $router->post('/api/v1/checkout/orders', [CheckoutController::class, 'createOrde
 $router->get('/api/v1/checkout/shipping-zones', [CheckoutController::class, 'shippingZones']);
 // Also takes courier tracking codes, which can have spaces and dots.
 $router->get('/api/v1/checkout/orders/{orderNumber:[^/]+}', [CheckoutController::class, 'show']);
-$router->post('/api/v1/checkout/orders/{orderNumber}/initialize-payment', [CheckoutController::class, 'initializePayment']);
-$router->get('/api/v1/checkout/orders/{orderNumber}/verify-payment', [CheckoutController::class, 'verifyPayment']);
-$router->get('/api/v1/checkout/orders/{orderNumber}/events', [CheckoutController::class, 'paymentEvents']);
-$router->post('/api/v1/checkout/orders/{orderNumber}/payment-sent', [CheckoutController::class, 'markPaymentSent']);
-$router->post('/api/v1/checkout/orders/{orderNumber}/release', [CheckoutController::class, 'releaseOrder']);
+$router->post('/api/v1/checkout/orders/{orderNumber:[^/]+}/initialize-payment', [CheckoutController::class, 'initializePayment']);
+$router->get('/api/v1/checkout/orders/{orderNumber:[^/]+}/verify-payment', [CheckoutController::class, 'verifyPayment']);
+$router->get('/api/v1/checkout/orders/{orderNumber:[^/]+}/events', [CheckoutController::class, 'paymentEvents']);
+$router->post('/api/v1/checkout/orders/{orderNumber:[^/]+}/payment-sent', [CheckoutController::class, 'markPaymentSent']);
+$router->post('/api/v1/checkout/orders/{orderNumber:[^/]+}/release', [CheckoutController::class, 'releaseOrder']);
 
 // --- Payment Webhook Routes ---
 $router->post('/api/v1/webhooks/kora', [PaymentWebhookController::class, 'handleKora']);

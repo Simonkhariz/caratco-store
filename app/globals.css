@@ -69,6 +69,142 @@ body {
   font-family: var(--font-body);
 }
 
+/* ==========================================================================
+   Custom Modern Scrollbars (Site-wide & Modals)
+   Replaces default Windows clunky grey scrollbars with sleek, rounded,
+   semi-transparent minimalist bars that adapt smoothly on hover.
+   ========================================================================== */
+
+/* Standard Firefox / W3C */
+html,
+body,
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+/* WebKit / Blink (Chrome, Edge, Safari, Brave, Opera) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.22);
+  border-radius: 9999px;
+  background-clip: padding-box;
+  transition: background-color 0.15s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(0, 0, 0, 0.65);
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Modals, Dialogs, Drawers & Scrollable panels */
+[role="dialog"]::-webkit-scrollbar,
+[role="dialog"] *::-webkit-scrollbar,
+[aria-modal="true"]::-webkit-scrollbar,
+[aria-modal="true"] *::-webkit-scrollbar,
+[data-dialog-body]::-webkit-scrollbar,
+[data-dialog-body] *::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
+.modal-body *::-webkit-scrollbar,
+[class*="overflow-y-auto"]::-webkit-scrollbar,
+[class*="overflow-x-auto"]::-webkit-scrollbar,
+[class*="overflow-auto"]::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+[role="dialog"]::-webkit-scrollbar-thumb,
+[role="dialog"] *::-webkit-scrollbar-thumb,
+[aria-modal="true"]::-webkit-scrollbar-thumb,
+[aria-modal="true"] *::-webkit-scrollbar-thumb,
+[data-dialog-body]::-webkit-scrollbar-thumb,
+[data-dialog-body] *::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb,
+.modal-body *::-webkit-scrollbar-thumb,
+[class*="overflow-y-auto"]::-webkit-scrollbar-thumb,
+[class*="overflow-x-auto"]::-webkit-scrollbar-thumb,
+[class*="overflow-auto"]::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 9999px;
+}
+
+[role="dialog"]::-webkit-scrollbar-thumb:hover,
+[role="dialog"] *::-webkit-scrollbar-thumb:hover,
+[aria-modal="true"]::-webkit-scrollbar-thumb:hover,
+[aria-modal="true"] *::-webkit-scrollbar-thumb:hover,
+[data-dialog-body]::-webkit-scrollbar-thumb:hover,
+[data-dialog-body] *::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover,
+.modal-body *::-webkit-scrollbar-thumb:hover,
+[class*="overflow-y-auto"]::-webkit-scrollbar-thumb:hover,
+[class*="overflow-x-auto"]::-webkit-scrollbar-thumb:hover,
+[class*="overflow-auto"]::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+[role="dialog"]::-webkit-scrollbar-thumb:active,
+[role="dialog"] *::-webkit-scrollbar-thumb:active,
+[aria-modal="true"]::-webkit-scrollbar-thumb:active,
+[aria-modal="true"] *::-webkit-scrollbar-thumb:active,
+[data-dialog-body]::-webkit-scrollbar-thumb:active,
+[data-dialog-body] *::-webkit-scrollbar-thumb:active,
+.modal-body::-webkit-scrollbar-thumb:active,
+.modal-body *::-webkit-scrollbar-thumb:active,
+[class*="overflow-y-auto"]::-webkit-scrollbar-thumb:active,
+[class*="overflow-x-auto"]::-webkit-scrollbar-thumb:active,
+[class*="overflow-auto"]::-webkit-scrollbar-thumb:active {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Dark mode / dark surface adaptation */
+.dark,
+.dark *,
+[data-theme="dark"],
+[data-theme="dark"] *,
+.admin-dark,
+.admin-dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb,
+[data-theme="dark"] ::-webkit-scrollbar-thumb,
+.admin-dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.28);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+.admin-dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb:active,
+[data-theme="dark"] ::-webkit-scrollbar-thumb:active,
+.admin-dark ::-webkit-scrollbar-thumb:active {
+  background-color: rgba(255, 255, 255, 0.75);
+}
+
 /* Custom Hide Scrollbar */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
