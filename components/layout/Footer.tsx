@@ -3,7 +3,7 @@
 import { SHOP } from '@/lib/shop';
 import React, { useId, useState } from 'react';
 import Link from 'next/link';
-import { Mail, CheckCircle2, Heart, AlertTriangle } from 'lucide-react';
+import { Mail, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { apiSubscribeNewsletter } from '@/lib/api-client';
 import { useStoreInfo, useStoreNav, whatsAppLink } from '@/lib/use-store-info';
 import { useStoreSupport } from '@/lib/use-store-support';
@@ -242,11 +242,23 @@ export const Footer: React.FC = () => {
             <p>
               © {new Date().getFullYear()} {origin?.store_name || SHOP.name}. All rights reserved.
             </p>
-            <p>
-              Developed with <Heart className="inline h-3.5 w-3.5 -mt-0.5 fill-[#FF3333] text-[#FF3333]" aria-hidden="true" />
-              <span className="sr-only">love</span> by{' '}
-              <a href={DEVELOPER.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-black underline-offset-2 hover:underline">
-                {DEVELOPER.name}
+            <p className="inline-flex items-center gap-1.5">
+              <span>Built by</span>
+              <a
+                href={DEVELOPER.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 font-semibold text-black underline-offset-2 hover:underline"
+              >
+                <img
+                  src={DEVELOPER.logo}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="h-4 w-4 object-contain inline-block -mt-0.5"
+                  aria-hidden="true"
+                />
+                <span>{DEVELOPER.name}</span>
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
             </p>

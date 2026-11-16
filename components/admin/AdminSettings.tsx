@@ -322,15 +322,27 @@ export function AdminSettings() {
                 Built and maintained by <strong className="text-[#111827]">{DEVELOPER.name}</strong>. For help with the shop, changes or new
                 features, get in touch:
               </p>
-              <a
-                href={DEVELOPER.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#1f2937] px-3 py-2 text-xs font-semibold text-white hover:bg-[#111827]"
-              >
-                Contact {DEVELOPER.name}
-                <span className="sr-only"> (opens in a new tab)</span>
-              </a>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <a
+                  href={DEVELOPER.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1eb857]"
+                >
+                  <img src={DEVELOPER.logo} alt="" className="h-4 w-4 object-contain brightness-0 invert" aria-hidden="true" />
+                  Chat on WhatsApp ({DEVELOPER.whatsapp})
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+                <a
+                  href={DEVELOPER.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb]"
+                >
+                  Visit {DEVELOPER.name} ↗
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </div>
             </Panel>
 
             <Panel title="Configured on the server" bodyClassName="p-4">
