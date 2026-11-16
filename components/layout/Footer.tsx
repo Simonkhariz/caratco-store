@@ -243,7 +243,7 @@ export const Footer: React.FC = () => {
               © {new Date().getFullYear()} {origin?.store_name || SHOP.name}. All rights reserved.
             </p>
             <p className="inline-flex items-center gap-1.5">
-              <span>Built by</span>
+              <span className="font-semibold text-black">{origin?.store_name || SHOP.name}</span> by{' '}
               <a
                 href={DEVELOPER.url}
                 target="_blank"
