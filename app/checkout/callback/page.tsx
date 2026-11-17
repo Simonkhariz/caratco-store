@@ -371,7 +371,7 @@ function CheckoutCallbackContent() {
           disabled={isRetrying !== false}
           className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-50"
         >
-          {isRetrying === payNowGateway ? 'Opening paymentâ€¦' : 'Pay now'}
+          {isRetrying === payNowGateway ? 'Opening payment…' : 'Pay now'}
         </button>
       )}
       {whatsappEnabled && (effectiveInvoiceSent ? (
@@ -382,7 +382,7 @@ function CheckoutCallbackContent() {
             disabled={isRefreshing}
             className={`w-full text-white font-semibold py-3 rounded-full text-sm disabled:opacity-60 ${awaitingFlash ? 'bg-amber-600' : 'bg-[#1DA851] hover:bg-[#178a43]'}`}
           >
-            {isRefreshing ? 'Checkingâ€¦' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
+            {isRefreshing ? 'Checking…' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
           </button>
           <button type="button" onClick={() => void handleRetryPayment('whatsapp')} disabled={isRetrying !== false} className="w-full text-xs text-neutral-700 underline hover:no-underline disabled:opacity-50">
             Send the order number on WhatsApp again
@@ -395,7 +395,7 @@ function CheckoutCallbackContent() {
           disabled={isRetrying !== false}
           className="w-full border border-[#1DA851] text-[#178a43] bg-white hover:bg-emerald-50 font-semibold py-3 rounded-full text-sm disabled:opacity-50"
         >
-          {isRetrying === 'whatsapp' ? 'Opening WhatsAppâ€¦' : 'Pay via WhatsApp (bank transfer)'}
+          {isRetrying === 'whatsapp' ? 'Opening WhatsApp…' : 'Pay via WhatsApp (bank transfer)'}
         </button>
       ))}
     </div>
@@ -409,7 +409,7 @@ function CheckoutCallbackContent() {
         {view === 'checking' && (
           <div className="py-12 space-y-4" role="status">
             <div className="w-14 h-14 border-4 border-black/10 border-t-black rounded-full animate-spin mx-auto" aria-hidden="true" />
-            <h1 className="text-xl font-bold text-black">Checking your paymentâ€¦</h1>
+            <h1 className="text-xl font-bold text-black">Checking your payment…</h1>
             <p className="text-sm text-neutral-700 max-w-sm mx-auto">We confirm every payment directly with the payment provider.</p>
           </div>
         )}
@@ -479,15 +479,15 @@ function CheckoutCallbackContent() {
                 {order && order.items.length > 0 && (
                   <ul className="divide-y divide-neutral-100">
                     {order.items.map((item) => {
-                      // Only the options the product uses ("M Â· Navy"); nothing for one with none.
-                      const options = optionsText(item.variant_options?.size, item.variant_options?.color, ' Â· ');
+                      // Only the options the product uses ("M · Navy"); nothing for one with none.
+                      const options = optionsText(item.variant_options?.size, item.variant_options?.color, ' · ');
                       return (
                         <li key={item.id} className="py-2 flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <p className="font-semibold text-black truncate">{item.item_name}</p>
                             <p className="text-xs text-neutral-600">
                               Qty {item.quantity}
-                              {options ? ` Â· ${options}` : ''}
+                              {options ? ` · ${options}` : ''}
                             </p>
                             {item.variant_options?.warranty && (
                               <p className="text-xs text-neutral-600">Warranty: {item.variant_options.warranty}</p>
@@ -621,12 +621,12 @@ function CheckoutCallbackContent() {
             {awaitingConfirmation ? (
               <div className="flex items-center justify-center gap-2.5" role="status">
                 <div className="w-5 h-5 border-[3px] border-amber-200 border-t-amber-600 rounded-full animate-spin" aria-hidden="true" />
-                <p className="text-sm font-medium text-amber-900">Checking every few secondsâ€¦</p>
+                <p className="text-sm font-medium text-amber-900">Checking every few seconds…</p>
               </div>
             ) : checkingAutomatically && (
               <p className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-900 rounded-full text-xs font-medium border border-amber-200">
                 <span className={`w-2 h-2 rounded-full bg-amber-600 ${isRefreshing ? 'animate-ping' : ''}`} />
-                Checking automaticallyâ€¦
+                Checking automatically…
               </p>
             )}
             <div className="flex flex-col gap-2.5">
@@ -637,7 +637,7 @@ function CheckoutCallbackContent() {
                   disabled={isRefreshing}
                   className={`w-full text-white font-semibold py-3 rounded-full text-sm disabled:opacity-60 ${awaitingFlash ? 'bg-amber-600' : 'bg-[#1DA851] hover:bg-[#178a43]'}`}
                 >
-                  {isRefreshing ? 'Checkingâ€¦' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
+                  {isRefreshing ? 'Checking…' : awaitingFlash ? 'Please try again' : "I've sent the transfer"}
                 </button>
               ) : (
                 <button
@@ -646,7 +646,7 @@ function CheckoutCallbackContent() {
                   disabled={isRefreshing}
                   className="w-full bg-accent text-accent-ink hover:bg-accent-hover font-semibold py-3 rounded-full text-sm disabled:opacity-60"
                 >
-                  {isRefreshing ? 'Checkingâ€¦' : 'Check again'}
+                  {isRefreshing ? 'Checking…' : 'Check again'}
                 </button>
               )}
               {!awaitingConfirmation && (result?.status === 'not_started' || !checkingAutomatically) && retryPanel}
@@ -759,7 +759,7 @@ export default function CheckoutCallbackPage() {
       fallback={
         <div className="min-h-[70vh] flex items-center justify-center">
           <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin" aria-hidden="true" />
-          <span className="sr-only">Loadingâ€¦</span>
+          <span className="sr-only">Loading…</span>
         </div>
       }
     >
