@@ -250,6 +250,7 @@ export const Footer: React.FC = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 font-semibold text-black underline-offset-2 hover:underline"
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={DEVELOPER.logo}
                   alt=""
