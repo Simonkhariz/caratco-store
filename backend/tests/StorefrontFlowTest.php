@@ -217,6 +217,35 @@ $t->ok('admin "Customer says paid" list shows the order', in_array($onum, array_
 $t->ok('admin order shows when it was marked', TestKit::get($t->http('GET', "/admin/orders/{$onum}", ['jar' => $admin['jar']]), 'data.customer_marked_paid_at') !== null);
 
 // -----------------------------------------------------------------------------
+$t->section('Orders can be retrieved and verified directly by gateway references');
+$mnfyRef = 'MNFY-' . $onum . '-TEST1234';
+$mnfyTrx = 'MNFY|20261115123456|998877';
+$paymentRowId = (int) $t->db->insert(
+    "INSERT INTO `payments` (`order_id`, `provider`, `provider_reference`, `amount`, `currency`, `status`, `provider_payload_redacted`)
+     SELECT `id`, 'monnify', ?, `grand_total`, 'NGN', 'pending', ? FROM `orders` WHERE `order_number` = ?",
+    'sss',
+    [$mnfyRef, json_encode(['transactionReference' => $mnfyTrx]), $onum]
+);
+
+$byRef = $t->http('GET', "/checkout/orders/{$mnfyRef}");
+$t->check('GET order by provider_reference succeeds without token', 200, $byRef['status']);
+$t->check('GET order by provider_reference returns canonical order_number', $onum, TestKit::get($byRef, 'data.order_number'));
+
+$byTrx = $t->http('GET', "/checkout/orders/" . rawurlencode($mnfyTrx));
+$t->check('GET order by gateway transactionReference succeeds without token', 200, $byTrx['status']);
+$t->check('GET order by gateway transactionReference returns canonical order_number', $onum, TestKit::get($byTrx, 'data.order_number'));
+
+$verifyByRef = $t->http('GET', "/checkout/orders/{$mnfyRef}/verify-payment");
+$t->check('verify-payment by provider_reference succeeds without token', 200, $verifyByRef['status']);
+$t->check('verify-payment by provider_reference returns canonical order_number', $onum, TestKit::get($verifyByRef, 'data.order_number'));
+
+$verifyByTrx = $t->http('GET', "/checkout/orders/" . rawurlencode($mnfyTrx) . "/verify-payment");
+$t->check('verify-payment by gateway transactionReference succeeds without token', 200, $verifyByTrx['status']);
+$t->check('verify-payment by gateway transactionReference returns canonical order_number', $onum, TestKit::get($verifyByTrx, 'data.order_number'));
+
+$t->sql("DELETE FROM `payments` WHERE `id` = ?", 'i', [$paymentRowId]);
+
+// -----------------------------------------------------------------------------
 $t->section('Payment windows are published for the storefront text');
 $pm = $t->http('GET', '/checkout/payment-methods');
 $t->check('online payment window in minutes', \App\Services\PaymentAttempts::gatewayWindowMinutes(), TestKit::get($pm, 'data.payment_window_minutes'));

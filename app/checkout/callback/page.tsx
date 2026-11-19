@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { SHOP, SHOP_FILE_NAME, optionsText } from '@/lib/shop';
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore } from 'react';
@@ -428,6 +428,9 @@ function CheckoutCallbackContent() {
                   e.preventDefault();
                   if (!keyInput) return;
                   saveGuestToken(orderNumber, keyInput); // the saved key becomes `token`, which starts a new check
+                  if (effectiveOrderNumber && effectiveOrderNumber !== orderNumber) {
+                    saveGuestToken(effectiveOrderNumber, keyInput);
+                  }
                 }}
               >
                 <label htmlFor="access-key" className="sr-only">Order access key</label>
