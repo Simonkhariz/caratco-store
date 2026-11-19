@@ -15,7 +15,7 @@ declare(strict_types=1);
  *
  * Windows Task Scheduler (daily at 03:00):
  *   schtasks /Create /SC DAILY /ST 03:00 /TN "ShopCo Database Check" ^
- *     /TR "C:\xampp\php\php.exe C:\path\to\E-commerce\backend\scripts\check_database.php"
+ *     /TR "C:\xampp\php\php.exe C:\path\to\your-shop\backend\scripts\check_database.php"
  */
 
 if (PHP_SAPI !== 'cli') {

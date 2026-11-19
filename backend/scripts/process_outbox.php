@@ -29,7 +29,7 @@ declare(strict_types=1);
  *
  * Windows Task Scheduler (every minute; php-win.exe runs without a console window):
  *   schtasks /Create /SC MINUTE /MO 1 /TN "ShopCo Send Email" ^
- *     /TR "C:\xampp\php\php-win.exe C:\path\to\E-commerce\backend\scripts\process_outbox.php"
+ *     /TR "C:\xampp\php\php-win.exe C:\path\to\your-shop\backend\scripts\process_outbox.php"
  * cron (Linux):  * * * * *  php /var/www/shopco/backend/scripts/process_outbox.php
  */
 

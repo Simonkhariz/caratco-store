@@ -21,7 +21,7 @@ declare(strict_types=1);
  *
  * Windows Task Scheduler (every 10 minutes):
  *   schtasks /Create /SC MINUTE /MO 10 /TN "ShopCo Expire Orders" ^
- *     /TR "C:\xampp\php\php.exe C:\path\to\E-commerce\backend\scripts\expire_pending_orders.php"
+ *     /TR "C:\xampp\php\php.exe C:\path\to\your-shop\backend\scripts\expire_pending_orders.php"
  */
 
 if (PHP_SAPI !== 'cli') {

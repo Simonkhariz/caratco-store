@@ -125,8 +125,8 @@ Add the following virtual host to `C:\xampp\apache\conf\extra\httpd-vhosts.conf`
 ```apache
 <VirtualHost *:80>
     ServerName shop-api.local
-    DocumentRoot "C:/Users/smnkh/Desktop/E-templates/E-commerce/backend/public"
-    <Directory "C:/Users/smnkh/Desktop/E-templates/E-commerce/backend/public">
+    DocumentRoot "C:/path/to/your-shop/backend/public"
+    <Directory "C:/path/to/your-shop/backend/public">
         Options -Indexes +FollowSymLinks
         AllowOverride All
         Require all granted
@@ -238,7 +238,7 @@ php backend/scripts/expire_pending_orders.php --no-gateway-check
 ```
 Windows Task Scheduler (every 10 minutes):
 ```powershell
-schtasks /Create /SC MINUTE /MO 10 /TN "ShopCo Expire Orders" /TR "C:\xampp\php\php.exe C:\path\to\E-commerce\backend\scripts\expire_pending_orders.php"
+schtasks /Create /SC MINUTE /MO 10 /TN "ShopCo Expire Orders" /TR "C:\xampp\php\php.exe C:\path\to\your-shop\backend\scripts\expire_pending_orders.php"
 ```
 
 Optional `.env` settings: `ORDER_PAYMENT_WINDOW_MINUTES` (default 30, never under 15) and
@@ -275,7 +275,7 @@ retries punctual when the shop is quiet and sends newsletters in bigger batches.
 Schedule it **every minute** (php-win.exe runs without a console window; runs never overlap and
 two at once are safe, because each email is claimed before it is sent):
 ```powershell
-schtasks /Create /SC MINUTE /MO 1 /TN "ShopCo Send Email" /TR "C:\xampp\php\php-win.exe C:\path\to\E-commerce\backend\scripts\process_outbox.php --limit=500 --max-seconds=50 --rate=8"
+schtasks /Create /SC MINUTE /MO 1 /TN "ShopCo Send Email" /TR "C:\xampp\php\php-win.exe C:\path\to\your-shop\backend\scripts\process_outbox.php --limit=500 --max-seconds=50 --rate=8"
 ```
 ```cron
 * * * * *  php /var/www/shopco/backend/scripts/process_outbox.php --limit=500 --max-seconds=50 --rate=8
@@ -312,7 +312,7 @@ php backend/scripts/check_database.php
 ```
 Windows Task Scheduler (daily at 03:00):
 ```powershell
-schtasks /Create /SC DAILY /ST 03:00 /TN "ShopCo Database Check" /TR "C:\xampp\php\php.exe C:\path\to\E-commerce\backend\scripts\check_database.php"
+schtasks /Create /SC DAILY /ST 03:00 /TN "ShopCo Database Check" /TR "C:\xampp\php\php.exe C:\path\to\your-shop\backend\scripts\check_database.php"
 ```
 
 ### Pictures (uploads)
