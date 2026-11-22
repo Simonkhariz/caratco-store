@@ -19,6 +19,26 @@ const nextConfig = {
   // on the server usually runs out of memory. Normal builds stay as they are.
   ...(process.env.SHOPCO_STANDALONE === 'true' ? { output: 'standalone' } : {}),
   reactStrictMode: true,
+  // Don't advertise the framework.
+  poweredByHeader: false,
+  // Security headers on every page (22 Nov 2026 penetration test):
+  // - no other site may show the shop or the admin inside a frame (clickjacking);
+  // - browsers keep to https for a year, and never guess a file's type;
+  // - other sites see only the shop's address in Referer, never a full path with an order number;
+  // - pages can't load plugins or change the base address, and forms post only to the shop;
+  // - the camera, microphone and payment features are off; location only for the shop's own
+  //   "Use my current location" button at checkout.
+  async headers() {
+    const security = [
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'" },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), payment=(), geolocation=(self)' },
+      ...(process.env.NODE_ENV === 'production' ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' }] : []),
+    ];
+    return [{ source: '/:path*', headers: security }];
+  },
   experimental: {
     agentUpgrade: 'security',
     // Calls forwarded to the API (/api/v1) give up after 30 s by default. Some admin actions

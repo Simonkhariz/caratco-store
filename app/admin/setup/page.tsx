@@ -14,6 +14,7 @@ interface SetupForm extends SetupStorePayload {
 }
 
 const EMPTY: SetupForm = {
+  setup_token: '',
   name: '',
   email: '',
   password: '',
@@ -38,12 +39,16 @@ export default function AdminSetupPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [needsCode, setNeedsCode] = useState(false);
 
   useEffect(() => {
     apiGetSetupStatus()
       .then((status) => {
         if (status.is_setup_completed) router.replace('/admin/login');
-        else setChecking(false);
+        else {
+          setNeedsCode(Boolean(status.needs_setup_code));
+          setChecking(false);
+        }
       })
       .catch(() => {
         setUnreachable(true);
@@ -67,11 +72,12 @@ export default function AdminSetupPage() {
     setSubmitting(true);
     try {
       const payload: SetupStorePayload = {
+        ...(needsCode ? { setup_token: (form.setup_token ?? '').trim() } : {}),
         name: form.name,
         email: form.email,
         password: form.password,
         store_name: form.store_name,
-        contact_email: form.contact_email || form.email,
+        contact_email: form.contact_email,
         contact_phone: form.contact_phone,
         origin_address: form.origin_address,
         origin_city: form.origin_city,
@@ -114,6 +120,12 @@ export default function AdminSetupPage() {
               </p>
             )}
 
+            {needsCode && (
+              <Field label="Setup code" required error={errors.setup_token} hint="SETUP_TOKEN in the API settings file (.env) on the server.">
+                {(p) => <TextInput {...p} autoComplete="off" value={form.setup_token ?? ''} onChange={update('setup_token')} />}
+              </Field>
+            )}
+
             <fieldset className="grid gap-4 sm:grid-cols-2">
               <legend className="mb-2 text-sm font-semibold text-[#111827]">Administrator</legend>
               <Field label="Full name" required error={errors.name} className="sm:col-span-2">
@@ -135,7 +147,7 @@ export default function AdminSetupPage() {
               <Field label="Store name" required error={errors.store_name} className="sm:col-span-2">
                 {(p) => <TextInput {...p} value={form.store_name} onChange={update('store_name')} />}
               </Field>
-              <Field label="Support email" error={errors.contact_email} hint="Shown to customers. Defaults to your email.">
+              <Field label="Support email" error={errors.contact_email} hint="Shown to customers in emails and the footer. Can be added later in Settings.">
                 {(p) => <TextInput {...p} type="email" value={form.contact_email} onChange={update('contact_email')} />}
               </Field>
               <Field label="Support phone" error={errors.contact_phone}>

@@ -133,7 +133,9 @@ class Env
      */
     public static function isProduction(): bool
     {
-        return strtolower((string) self::get('APP_ENV', 'development')) === 'production';
+        // Fail closed: only an explicit development or testing setting turns production rules off
+        // (secure cookies, strict CORS, hidden error details), never a missing or mistyped one.
+        return !in_array(strtolower(trim((string) self::get('APP_ENV', 'production'))), ['development', 'testing', 'local'], true);
     }
 
     /**

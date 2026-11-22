@@ -26,7 +26,7 @@ class CorsMiddleware
         if ($origin !== null) {
             if (in_array($origin, $allowedOrigins, true)) {
                 $isAllowed = true;
-            } elseif (strtolower((string) Env::get('APP_ENV', 'development')) === 'development') {
+            } elseif (strtolower((string) Env::get('APP_ENV', 'production')) === 'development') {
                 // Local development only: permit any localhost/127.0.0.1 origin regardless of port
                 $parsed = parse_url($origin);
                 $host = $parsed['host'] ?? '';

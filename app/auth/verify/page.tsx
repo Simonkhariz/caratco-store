@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
-type VerifyState = 'verifying' | 'success' | 'error';
+// 'confirm' first: a link someone else sent could sign this browser in to THEIR account, so the
+// visitor presses Sign in themselves instead of the page doing it on arrival.
+type VerifyState = 'confirm' | 'verifying' | 'success' | 'error';
 
 function VerifyMagicLink() {
   const searchParams = useSearchParams();
@@ -14,7 +16,7 @@ function VerifyMagicLink() {
   const { verifyMagicLink, openAuthModal } = useAuth();
   // The token is read once, on arrival (it is then removed from the address bar).
   const [token] = useState(() => searchParams.get('token') || '');
-  const [verifyState, setState] = useState<VerifyState>('verifying');
+  const [verifyState, setState] = useState<VerifyState>('confirm');
   const [verifyMessage, setMessage] = useState<string>('');
   const [passwordRemoved, setPasswordRemoved] = useState(false);
   const state: VerifyState = token ? verifyState : 'error';
@@ -22,14 +24,15 @@ function VerifyMagicLink() {
   // Sign-in tokens are single use; guard against React StrictMode running the effect twice.
   const attempted = useRef(false);
 
+  // Drop the token from the address bar and history as soon as it has been read.
   useEffect(() => {
-    if (attempted.current) return;
-    attempted.current = true;
-
-    // Drop the token from the address bar and history as soon as it has been read.
     window.history.replaceState(null, '', '/auth/verify');
-    if (!token) return;
+  }, []);
 
+  const signIn = () => {
+    if (attempted.current || !token) return;
+    attempted.current = true;
+    setState('verifying');
     verifyMagicLink(token)
       .then((removed) => {
         setState('success');
@@ -41,10 +44,26 @@ function VerifyMagicLink() {
         setState('error');
         setMessage(err.message || 'This sign-in link is invalid, expired, or has already been used.');
       });
-  }, [token, verifyMagicLink, router]);
+  };
 
   return (
     <div className="bg-white rounded-3xl p-8 sm:p-12 text-center border border-neutral-100 shadow-sm space-y-4" role="status" aria-live="polite">
+      {state === 'confirm' && (
+        <>
+          <h1 className="text-lg font-bold text-black">Sign in to your account</h1>
+          <p className="text-sm text-neutral-600 max-w-md mx-auto">
+            Continue only if you asked for this sign-in link yourself.
+          </p>
+          <button
+            type="button"
+            onClick={signIn}
+            className="bg-accent text-accent-ink hover:bg-accent-hover font-semibold px-8 py-3 rounded-full text-sm transition-colors"
+          >
+            Sign in
+          </button>
+        </>
+      )}
+
       {state === 'verifying' && (
         <>
           <div className="w-10 h-10 border-4 border-black/10 border-t-black rounded-full animate-spin mx-auto" aria-hidden="true" />

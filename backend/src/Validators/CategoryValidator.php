@@ -49,6 +49,8 @@ class CategoryValidator
 
         if (is_array($data['image_url'] ?? null) || Input::tooLong($data['image_url'] ?? '', 500)) {
             $errors['image_url'] = 'Enter one image address of at most 500 characters.';
+        } elseif (Input::text($data['image_url'] ?? '') !== '' && !Input::isPictureAddress(Input::text($data['image_url']))) {
+            $errors['image_url'] = 'Use an uploaded picture or an https:// picture address.';
         }
 
         return $errors;

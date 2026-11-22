@@ -36,6 +36,8 @@ class CheckoutController
 {
     private CheckoutService $checkoutService;
     private Database $db;
+    /** How the last canViewOrder() let the caller in: 'owner', 'token', 'email' or 'reference'. */
+    private string $accessBy = '';
 
     public function __construct(?CheckoutService $checkoutService = null, ?Database $db = null)
     {
@@ -51,6 +53,12 @@ class CheckoutController
     {
         RateLimiter::attempt('checkout_quote', RequestContext::clientIp(), 150, 600);
         $body = JsonBodyMiddleware::getBody();
+        // A price check with a code is also a code check: it shares the promo-code limit, so
+        // codes can't be guessed five times faster here.
+        $code = $body['coupon_code'] ?? $body['promo_code'] ?? $body['code'] ?? null;
+        if (is_string($code) && trim($code) !== '') {
+            RateLimiter::attempt('promo_validate', RequestContext::clientIp(), 30, 600, 'Too many promo code attempts. Please wait a few minutes.');
+        }
 
         try {
             $quote = $this->checkoutService->getQuote($body);
@@ -309,7 +317,7 @@ class CheckoutController
         );
 
         // Redact internal fields from the customer-facing response
-        unset($order['guest_access_token_hash'], $order['user_id'], $order['idempotency_key'], $order['requires_attention'], $order['attention_reason']);
+        unset($order['guest_access_token_hash'], $order['user_id'], $order['idempotency_key'], $order['requires_attention'], $order['attention_reason'], $order['device_hash'], $order['client_network']);
 
         $order['shipping_zone_snapshot'] = is_string($order['shipping_zone_snapshot']) ? json_decode($order['shipping_zone_snapshot'], true) : $order['shipping_zone_snapshot'];
         $order['shipping_address_snapshot'] = is_string($order['shipping_address_snapshot']) ? json_decode($order['shipping_address_snapshot'], true) : $order['shipping_address_snapshot'];
@@ -322,6 +330,14 @@ class CheckoutController
         $order['payment'] = $payment;
         $order['shipment'] = $shipment;
         $order['status'] = $order['order_status'] ?? 'pending_payment';
+
+        // A payment reference alone (it travels in payment-page addresses and browser history)
+        // shows the order and its status, not who it is for or where it goes.
+        if ($this->accessBy === 'reference') {
+            $address = is_array($order['shipping_address_snapshot']) ? $order['shipping_address_snapshot'] : [];
+            $order['shipping_address_snapshot'] = ['city' => $address['city'] ?? null, 'state' => $address['state'] ?? null];
+            unset($order['guest_email'], $order['contact_phone'], $order['customer_email']);
+        }
 
         Response::success($order, 'Order retrieved successfully.');
     }
@@ -400,6 +416,8 @@ class CheckoutController
      */
     public function initializePayment(array $params): void
     {
+        // Counted before any lookup, so made-up order numbers can't make the database search for free.
+        RateLimiter::attempt('payment_init', RequestContext::clientIp(), 20, 600);
         $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         if ($orderNumber === '') {
             Response::error('Order number is required.', 422, 'VALIDATION_ERROR');
@@ -416,8 +434,6 @@ class CheckoutController
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
         $orderNumber = (string) $order['order_number'];
-
-        RateLimiter::attempt('payment_init', RequestContext::clientIp(), 20, 600);
         $body = JsonBodyMiddleware::getBody();
 
         // The checkout email counts here as it does for looking the order up: the order emails
@@ -520,6 +536,9 @@ class CheckoutController
      */
     public function verifyPayment(array $params): void
     {
+        // Counted before any lookup, so made-up order numbers can't make the database search for free.
+        RateLimiter::attempt('payment_verify', RequestContext::clientIp(), 240, 600);
+
         $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         if ($orderNumber === '') {
             Response::error('Order number is required.', 422, 'VALIDATION_ERROR');
@@ -537,8 +556,6 @@ class CheckoutController
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
         $orderNumber = (string) $order['order_number'];
-
-        RateLimiter::attempt('payment_verify', RequestContext::clientIp(), 240, 600);
 
         $customRef = $this->returnReference();
         if ($customRef === '' && isset($paymentByRef) && $paymentByRef !== null) {
@@ -716,6 +733,8 @@ class CheckoutController
      */
     public function releaseOrder(array $params): void
     {
+        // Counted before any lookup, so made-up order numbers can't make the database search for free.
+        RateLimiter::attempt('order_release', RequestContext::clientIp(), 30, 600);
         $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         $order = $orderNumber === '' ? null : $this->db->fetchOne("SELECT * FROM `orders` WHERE `order_number` = ?", 's', [$orderNumber]);
         if ($order === null && $orderNumber !== '') {
@@ -728,8 +747,6 @@ class CheckoutController
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
         $orderNumber = (string) $order['order_number'];
-
-        RateLimiter::attempt('order_release', RequestContext::clientIp(), 30, 600);
         $body = JsonBodyMiddleware::getBody();
         if (!$this->canViewOrder($order, false, true, (string) ($body['guest_access_token'] ?? ''))) {
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
@@ -744,6 +761,8 @@ class CheckoutController
 
     public function markPaymentSent(array $params): void
     {
+        // Counted before any lookup, so made-up order numbers can't make the database search for free.
+        RateLimiter::attempt('payment_claim', RequestContext::clientIp(), 30, 600);
         $orderNumber = trim(rawurldecode($params['orderNumber'] ?? ''));
         $order = $orderNumber === '' ? null : $this->db->fetchOne("SELECT * FROM `orders` WHERE `order_number` = ?", 's', [$orderNumber]);
         if ($order === null && $orderNumber !== '') {
@@ -756,8 +775,6 @@ class CheckoutController
             Response::error('Order not found.', 404, 'ORDER_NOT_FOUND');
         }
         $orderNumber = (string) $order['order_number'];
-
-        RateLimiter::attempt('payment_claim', RequestContext::clientIp(), 30, 600);
         $body = JsonBodyMiddleware::getBody();
         // The checkout email counts here too (a customer who reached the order through "Track
         // order"): a claim only alerts the store once and never marks anything paid.
@@ -783,17 +800,29 @@ class CheckoutController
         if ($firstClaim) {
             // Keep the items reserved while the store checks the transfer (never shortens it).
             // Only the first tap does this: tapping again can't hold the stock any longer, so an
-            // order that is never paid still expires and its items go back on sale.
-            $this->db->executeUpdate(
+            // order that is never paid still expires and its items go back on sale. An order whose
+            // window has already closed is not revived, and no order is held more than two hours
+            // past the longest normal hold, counted from when it was placed (so tapping at the
+            // last minute can't keep stock off sale for another six hours).
+            $firstClaim = $this->db->executeUpdate(
                 "UPDATE `orders`
                  SET `customer_marked_paid_at` = NOW(),
-                     `expires_at` = GREATEST(COALESCE(`expires_at`, NOW()), DATE_ADD(NOW(), INTERVAL ? MINUTE))
-                 WHERE `id` = ? AND `order_status` = 'pending_payment' AND `customer_marked_paid_at` IS NULL",
-                'ii',
-                [PaymentAttempts::manualWindowMinutes(), (int) $order['id']]
-            );
+                     `expires_at` = LEAST(
+                         GREATEST(COALESCE(`expires_at`, NOW()), DATE_ADD(NOW(), INTERVAL ? MINUTE)),
+                         DATE_ADD(`created_at`, INTERVAL ? MINUTE)
+                     )
+                 WHERE `id` = ? AND `order_status` = 'pending_payment' AND `customer_marked_paid_at` IS NULL
+                   AND (`expires_at` IS NULL OR `expires_at` > NOW())",
+                'iii',
+                [PaymentAttempts::manualWindowMinutes(), PaymentAttempts::maxHoldMinutes() + 120, (int) $order['id']]
+            ) > 0;
         }
         $fresh = $this->db->fetchOne("SELECT `customer_marked_paid_at`, `expires_at` FROM `orders` WHERE `id` = ?", 'i', [(int) $order['id']]);
+        if ($fresh['customer_marked_paid_at'] === null) {
+            // Its payment window closed before the tap: nothing is held or recorded.
+            Response::success(['order_number' => $orderNumber, 'recorded' => false, 'order_status' => 'pending_payment', 'expires_at' => $fresh['expires_at']],
+                'The payment window for this order has closed. If you have already sent the money, message the store on WhatsApp with your order number.');
+        }
 
         if ($firstClaim) {
             try {
@@ -978,13 +1007,16 @@ class CheckoutController
     private function canViewOrder(array $order, bool $allowEmailMatch, bool $enforceCsrf = false, string $bodyToken = '', string $explicitRef = ''): bool
     {
         $currentUser = $this->resolveOptionalUser($enforceCsrf);
+        $this->accessBy = '';
         if ($currentUser !== null && !empty($order['user_id']) && (int) $order['user_id'] === (int) $currentUser['id']) {
+            $this->accessBy = 'owner';
             return true;
         }
 
         $token = trim((string) ($_SERVER['HTTP_X_GUEST_ACCESS_TOKEN'] ?? $_GET['token'] ?? $bodyToken));
         if ($token !== '' && !empty($order['guest_access_token_hash'])
             && hash_equals((string) $order['guest_access_token_hash'], hash('sha256', $token))) {
+            $this->accessBy = 'token';
             return true;
         }
 
@@ -992,6 +1024,7 @@ class CheckoutController
             $email = strtolower(trim((string) ($_GET['email'] ?? $_SERVER['HTTP_X_ORDER_EMAIL'] ?? '')));
             $orderEmail = strtolower(trim((string) ($order['guest_email'] ?? '')));
             if ($email !== '' && $orderEmail !== '' && hash_equals($orderEmail, $email)) {
+                $this->accessBy = 'email';
                 return true;
             }
         }
@@ -1003,6 +1036,7 @@ class CheckoutController
         if ($ref !== '') {
             $payment = $this->findPaymentAttempt($ref, (int) $order['id']);
             if ($payment !== null) {
+                $this->accessBy = 'reference';
                 return true;
             }
         }

@@ -46,6 +46,10 @@ class ReviewController
 
         $body = JsonBodyMiddleware::getBody();
         $session = SessionGuard::resolve(SessionCookie::SCOPE_CUSTOMER);
+        if ($session !== null) {
+            // A review posted with the customer's session must come from the shop's own pages.
+            SessionGuard::enforceCsrf($session['session']);
+        }
         $user = $session['user'] ?? null;
 
         $name = trim((string) ($body['author_name'] ?? ($user['full_name'] ?? '')));

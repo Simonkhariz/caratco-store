@@ -26,6 +26,14 @@ class JsonBodyMiddleware
             return;
         }
 
+        // Form posts (multipart) are only for the picture upload. Anywhere else they are refused,
+        // so a form on another website can't post to the API (e.g. sign a visitor in).
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        if (str_contains(strtolower($contentType), 'multipart/form-data') && $path !== '/api/v1/admin/upload-image') {
+            Response::error('Invalid Content-Type header. Expected application/json for payload requests.', 415, 'UNSUPPORTED_MEDIA_TYPE');
+        }
+
         $rawBody = file_get_contents('php://input');
 
         // If body is empty, nothing to parse

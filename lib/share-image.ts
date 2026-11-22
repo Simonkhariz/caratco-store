@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { headers } from 'next/headers';
 import { SHOP } from '@/lib/shop';
@@ -51,15 +51,26 @@ export function pictureVersion(src: string): string {
   return hash.toString(36);
 }
 
+// Plain file names only: letters, digits, dot, dash and underscore in each part. No encoded
+// characters (%2e%2e would become ".." after a check on the raw text), no "." or ".." parts.
+const OWN_PICTURE = /^\/(images|uploads)(\/[A-Za-z0-9_-][A-Za-z0-9._-]*)+$/;
+
 /** True for a picture the shop holds itself (the site's own files, or an upload). */
 function isOwnPicture(src: string): boolean {
-  return (src.startsWith('/images/') || src.startsWith('/uploads/')) && !src.includes('..') && !src.includes('\\');
+  return OWN_PICTURE.test(src) && !src.split('/').some((part) => part === '.' || part === '..');
 }
 
 async function loadOwnPicture(src: string): Promise<Buffer | null> {
   try {
     if (src.startsWith('/images/')) {
-      return await readFile(path.join(process.cwd(), 'public', ...src.split('/').filter(Boolean).map(decodeURIComponent)));
+      // Resolved and checked again: only a regular file inside public/images, at most the size
+      // limit, is ever read.
+      const root = path.join(process.cwd(), 'public', 'images');
+      const file = path.resolve(process.cwd(), 'public', ...src.split('/').filter(Boolean));
+      if (!file.startsWith(root + path.sep)) return null;
+      const info = await stat(file);
+      if (!info.isFile() || info.size === 0 || info.size > MAX_SOURCE_BYTES) return null;
+      return await readFile(file);
     }
     const res = await fetch(`${BACKEND_ORIGIN}${src}`, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;

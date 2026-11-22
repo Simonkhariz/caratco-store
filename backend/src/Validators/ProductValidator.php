@@ -244,6 +244,9 @@ class ProductValidator
             if (!is_array($img) || Input::text($img['image_url'] ?? '') === '' || Input::tooLong($img['image_url'], 500)) {
                 return 'Every photo needs an address of at most 500 characters.';
             }
+            if (!Input::isPictureAddress(Input::text($img['image_url']))) {
+                return 'A photo must be an uploaded picture or an https:// picture address.';
+            }
             if (is_array($img['alt_text'] ?? null) || Input::tooLong($img['alt_text'] ?? '', 255)) {
                 return 'A photo description can be at most 255 characters.';
             }

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Config\Env;
 use App\Database\Database;
 use App\Repositories\SessionRepository;
 use App\Repositories\StoreSettingsRepository;
 use App\Repositories\TokenRepository;
 use App\Repositories\UserRepository;
 use App\Support\Input;
+use App\Support\LoginDevice;
 use App\Support\PhoneNumber;
 use App\Support\RateLimiter;
 use App\Support\RequestContext;
@@ -60,6 +62,18 @@ class AuthService
             );
         }
 
+        // A brand-new shop is reachable before its owner finishes setting it up, and bots scan new
+        // addresses within minutes. On a live server, setup needs the code from SETUP_TOKEN in the
+        // API's .env, so only whoever controls the server can create the first admin.
+        $expected = trim((string) Env::get('SETUP_TOKEN', ''));
+        if ($expected !== '') {
+            if (!hash_equals($expected, trim((string) ($input['setup_token'] ?? '')))) {
+                Response::error('The setup code is not right. It is SETUP_TOKEN in the API settings file (.env).', 403, 'SETUP_TOKEN_INVALID');
+            }
+        } elseif (Env::isProduction()) {
+            Response::error('Add SETUP_TOKEN (any long random text) to the API settings file (.env), then enter it here.', 403, 'SETUP_TOKEN_REQUIRED');
+        }
+
         $name = trim((string) ($input['name'] ?? $input['full_name'] ?? ''));
         $email = trim(strtolower((string) ($input['email'] ?? '')));
         $password = (string) ($input['password'] ?? '');
@@ -67,7 +81,8 @@ class AuthService
         $originCity = trim((string) ($input['origin_city'] ?? ''));
         $originState = trim((string) ($input['origin_state'] ?? ''));
         $originAddress = trim((string) ($input['origin_address'] ?? ''));
-        $contactEmail = trim(strtolower((string) ($input['contact_email'] ?? $email)));
+        // The support email is public (footer, emails): it is never filled in from the admin's sign-in.
+        $contactEmail = trim(strtolower((string) ($input['contact_email'] ?? '')));
         $contactPhone = trim((string) ($input['contact_phone'] ?? ''));
 
         $errors = [];
@@ -236,9 +251,14 @@ class AuthService
         }
 
         RateLimiter::guard('login_ip_email', $ipKey, 5, 900, 'Too many failed sign-in attempts. Please wait 15 minutes and try again.');
-        RateLimiter::guard('login_email', $email, 20, 3600, 'Too many failed sign-in attempts for this account. Please try again later.');
 
         $user = $this->userRepo->findByEmail($email);
+        // The per-account limit stops guessing spread over many connections. A browser that has
+        // signed in to this account before skips it, so flooding the account with wrong passwords
+        // cannot lock its owner out (LoginDevice).
+        if ($user === null || !LoginDevice::isKnown((int) $user['id'])) {
+            RateLimiter::guard('login_email', $email, 20, 3600, 'Too many failed sign-in attempts for this account. Please try again later.');
+        }
         // Always one password check, so an unknown email takes as long as a wrong password.
         $hash = (string) ($user['password_hash'] ?? '');
         $passwordOk = password_verify($password, $hash !== '' ? $hash : self::DUMMY_PASSWORD_HASH);
@@ -254,6 +274,7 @@ class AuthService
         }
 
         RateLimiter::clear('login_ip_email', $ipKey);
+        LoginDevice::remember((int) $user['id']);
 
         $scope = SessionCookie::scopeForRole((string) $user['role']);
         $result = $this->startSession($user, SessionCookie::read($scope));

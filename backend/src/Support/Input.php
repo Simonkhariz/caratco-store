@@ -111,4 +111,36 @@ final class Input
         }
         return $candidate;
     }
+
+    /**
+     * A picture address the shop can show: one of its own files (/images/... or /uploads/..., plain
+     * file names, no encoded characters or ".." parts) or an https:// address. Anything else
+     * (http://, javascript:, data:, a path that climbs out of its folder) is refused.
+     */
+    public static function isPictureAddress(string $value): bool
+    {
+        if (preg_match('#^/(images|uploads)(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+$#', $value) === 1) {
+            return !preg_match('#/\.{1,2}(/|$)#', $value);
+        }
+        return self::isHttpsAddress($value);
+    }
+
+    /**
+     * A link the shop may send visitors to: a page of the shop itself (/category, never //host or
+     * /\host, which browsers treat as another site) or an https:// address.
+     */
+    public static function isShopLink(string $value): bool
+    {
+        if (preg_match('#^/(?![/\\\\])[^\s\\\\]*$#', $value) === 1) {
+            return preg_match('/[\x00-\x1F\x7F]/', $value) !== 1;
+        }
+        return self::isHttpsAddress($value);
+    }
+
+    /** https:// followed by a host, with no spaces, backslashes or control characters anywhere. */
+    private static function isHttpsAddress(string $value): bool
+    {
+        return preg_match('#^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[^\s\\\\]*)?$#', $value) === 1
+            && preg_match('/[\x00-\x1F\x7F]/', $value) !== 1;
+    }
 }

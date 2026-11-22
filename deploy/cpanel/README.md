@@ -128,7 +128,9 @@ check that list. It writes `backend/storage/backups/for-host-<date>.sql.gz`.
 2. In **Select PHP Version**, choose 8.2 or newer and tick: mysqli, curl, mbstring, openssl,
    simplexml, ctype, zlib, opcache. Set `upload_max_filesize` to 8M, `post_max_size` to 10M.
 3. Rename `env.cpanel.example` to `.env`, and fill in every `<...>` value. Make a random
-   `REVALIDATE_SECRET` on your PC: `php -r "echo bin2hex(random_bytes(24));"`.
+   `REVALIDATE_SECRET` on your PC: `php -r "echo bin2hex(random_bytes(24));"`. `SETUP_TOKEN` is
+   another random text: a shop started empty (no database import) asks for it on its setup page, so
+   only someone with this file can create the first admin.
 4. In **phpMyAdmin**, open the new database and **Import** the `for-host-<date>.sql.gz` file. Your products,
    settings and administrators arrive, and this **closes the setup page**.
 5. Check the database is up to date. In **Cron Jobs**, add a job for the next minute, wait, then delete it:
@@ -243,7 +245,7 @@ shop takes a normal backup (`docs/BACKUPS.md`).
 | Problem | Look at |
 |---|---|
 | Every page or API call shows a 500 error | Permissions: files should be 644 and folders 755, which the zips set. If the zip wasn't extracted by File Manager, check these first. Then `shopco-api/storage/logs/` and the panel's **Errors** |
-| The app won't start, or shows a 503 | **Setup Node.js App** → the app's log file; the Node.js version is at least 20.9; `server.js` is the startup file. On LiteSpeed hosts, tell me the log's message: that's the part not rehearsed |
+| The app won't start, or shows a 503 | **Setup Node.js App** → the app's log file; the Node.js version is at least 20.9; `server.js` is the startup file (it starts `next-server.js`; both must be there). On LiteSpeed hosts, tell me the log's message: that's the part not rehearsed |
 | Pictures on product pages are broken, others fine | The picture library: look for `sharp` in the app log. Tell me the message and the host's processor type (`x64` or `arm64`; rebuild with `-Cpu arm64` if needed, or with `-NoImageResizing`) |
 | "Resource temporarily unavailable", `EAGAIN` or "Unable to fork" in the log | The host's process limit. Check `UV_THREADPOOL_SIZE=2` and `VIPS_CONCURRENCY=1`; if it continues, ask the host for its limit or rebuild with `-NoImageResizing` |
 | Error 508, or "Resource limit reached" | Too many visitors at once for the plan's entry processes: a bigger plan, or ask the host |

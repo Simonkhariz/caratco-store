@@ -86,7 +86,27 @@ final class RateLimiter
 
     private static function id(string $bucket, string $key): string
     {
-        return hash('sha256', $bucket . '|' . strtolower(trim($key)));
+        // An IPv6 visitor controls a whole /64 (2^64 addresses): count the network, not the
+        // address, so changing the last half of the address cannot reset a limit.
+        $parts = array_map(static fn (string $part): string => self::networkOf(trim($part)), explode('|', $key));
+        return hash('sha256', $bucket . '|' . strtolower(implode('|', $parts)));
+    }
+
+    /** An IPv6 address becomes its /64 network; anything else is returned as it is. */
+    public static function networkOf(string $value): string
+    {
+        if ($value === '' || !str_contains($value, ':') || filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) === false) {
+            return $value;
+        }
+        $packed = @inet_pton($value);
+        if ($packed === false || strlen($packed) !== 16) {
+            return $value;
+        }
+        // An IPv4-mapped address (::ffff:1.2.3.4) is one IPv4 visitor: keep it whole.
+        if (str_starts_with($packed, str_repeat("\0", 10) . "\xff\xff")) {
+            return $value;
+        }
+        return (string) inet_ntop(substr($packed, 0, 8) . str_repeat("\0", 8)) . '/64';
     }
 
     private static function reject(string $message, int $retryAfter): void

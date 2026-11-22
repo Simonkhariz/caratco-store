@@ -888,11 +888,13 @@ export async function apiSaveWishlist(productIds: number[]): Promise<{ product_i
 /**
  * Check admin onboarding setup status.
  */
-export async function apiGetSetupStatus(): Promise<{ is_setup_completed: boolean; store_name: string }> {
-  return fetchFromApi<{ is_setup_completed: boolean; store_name: string }>('/setup/status');
+export async function apiGetSetupStatus(): Promise<{ is_setup_completed: boolean; store_name: string; needs_setup_code?: boolean }> {
+  return fetchFromApi<{ is_setup_completed: boolean; store_name: string; needs_setup_code?: boolean }>('/setup/status');
 }
 
 export interface SetupStorePayload {
+  /** SETUP_TOKEN from the API's .env (asked for on a live server). */
+  setup_token?: string;
   name: string;
   email: string;
   password: string;

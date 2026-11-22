@@ -69,6 +69,12 @@ error_reporting(E_ALL);
 // Warnings must never be echoed into JSON responses; they go to the PHP error log.
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
+// Into storage/logs (outside the public folder). Without this, many shared hosts write a file
+// called error_log next to index.php, where anyone could download it.
+// (PHP's own test server, php -S, prints to its console instead and never writes such a file.)
+if (PHP_SAPI !== 'cli-server' && is_dir(BASE_PATH . '/storage/logs') && is_writable(BASE_PATH . '/storage/logs')) {
+    ini_set('error_log', BASE_PATH . '/storage/logs/php-error.log');
+}
 ob_start();
 
 set_exception_handler(function (Throwable $e) use ($isDebug): void {
@@ -316,7 +322,13 @@ register_shutdown_function([\App\Database\Database::class, 'rollBackIfLeftOpen']
 $requestMethod = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 if (!in_array($requestMethod, ['GET', 'HEAD', 'OPTIONS'], true) && str_starts_with($requestPath, '/api/v1/admin/')) {
-    register_shutdown_function([Cache::class, 'bumpCatalog']);
+    // Only after a change that went through: a refused request (not signed in, invalid) must not
+    // empty the cache, or anyone could keep the shop reading everything from the database.
+    register_shutdown_function(static function (): void {
+        if (http_response_code() < 400) {
+            Cache::bumpCatalog();
+        }
+    });
     // Open storefront pages watch this and reload their content (GET /api/v1/storefront/version).
     register_shutdown_function([Cache::class, 'bumpStorefront']);
     register_shutdown_function([StorefrontRefresh::class, 'afterAdminChange']);

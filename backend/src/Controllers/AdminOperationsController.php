@@ -15,6 +15,7 @@ use App\Services\MailService;
 use App\Services\PaymentMethods;
 use App\Support\DevSwitches;
 use App\Support\Input;
+use App\Support\LoginDevice;
 use App\Support\PhoneNumber;
 use App\Support\RateLimiter;
 use App\Support\RequestContext;
@@ -696,10 +697,10 @@ class AdminOperationsController
         if ($in['title'] === '') {
             $errors['title'] = 'Title is required.';
         }
-        if ($in['image_url'] === '' || !preg_match('#^(/|https://)#', $in['image_url'])) {
+        if ($in['image_url'] === '' || !Input::isPictureAddress($in['image_url'])) {
             $errors['image_url'] = 'Upload an image or use an https:// image URL.';
         }
-        if ($in['cta_url'] !== '' && !preg_match('#^(/(?!/)|https://)#', $in['cta_url'])) {
+        if ($in['cta_url'] !== '' && !Input::isShopLink($in['cta_url'])) {
             $errors['cta_url'] = 'Link must be a store path like /category or an https:// URL.';
         }
         foreach (['title' => 255, 'subtitle' => 255, 'cta_text' => 50, 'cta_url' => 255, 'image_url' => 500] as $field => $max) {
@@ -1576,15 +1577,19 @@ class AdminOperationsController
                 'si',
                 [password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]), $adminId]
             );
+            $passwordChanged = true;
+        }
 
-            // Sign out other admin sessions; keep this one.
+        if ($passwordChanged || $emailChanged) {
+            // A new sign-in email or password signs out every other device and forgets the
+            // browsers known to this account (LoginDevice); this one stays signed in.
             $current = SessionCookie::read(SessionCookie::SCOPE_ADMIN);
             $this->db->execute(
                 "DELETE FROM `sessions` WHERE `user_id` = ? AND `id` <> ?",
                 'is',
                 [$adminId, hash('sha256', (string) $current)]
             );
-            $passwordChanged = true;
+            LoginDevice::forgetAll($adminId);
         }
 
         AuditService::record(
@@ -1596,7 +1601,9 @@ class AdminOperationsController
             ['full_name' => $fullName, 'phone' => $phone, 'email' => $email]
         );
 
-        $message = $passwordChanged ? 'Profile and password updated. Other sessions were signed out.' : 'Profile updated.';
+        $message = $passwordChanged
+            ? 'Profile and password updated. Other sessions were signed out.'
+            : ($emailChanged ? 'Profile updated. Other sessions were signed out.' : 'Profile updated.');
         if ($emailChanged) {
             $message .= ' Sign in with ' . $email . ' from now on.';
         }

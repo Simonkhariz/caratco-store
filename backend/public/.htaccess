@@ -48,3 +48,8 @@ Options -Indexes
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
+
+# PHP and server logs that a host may write into this folder are never served.
+<FilesMatch "(^error_log$|\.log$)">
+    Require all denied
+</FilesMatch>

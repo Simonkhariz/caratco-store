@@ -41,6 +41,8 @@ class SetupController
                 'address' => $settings['store_origin_address'] ?? null,
             ],
             'contact_email' => $settings['store_contact_email'] ?? null,
+            // Whether setup asks for the code in SETUP_TOKEN (always on a live server).
+            'needs_setup_code' => !$isCompleted && (trim((string) \App\Config\Env::get('SETUP_TOKEN', '')) !== '' || \App\Config\Env::isProduction()),
         ], 'Store setup status retrieved.');
     }
 

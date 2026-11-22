@@ -54,6 +54,18 @@ class RequestContext
      * last entry that is not one of our own proxies. (Taking the leftmost entry would let anyone
      * pick their own address and step around every rate limit.)
      */
+    /**
+     * Refuses a request a browser marks as coming from another website (Sec-Fetch-Site:
+     * cross-site). Used on sign-in, sign-up and sign-in links, so another site can't sign a
+     * visitor in to an account it chose. Requests without the header (apps, scripts) are unaffected.
+     */
+    public static function refuseCrossSite(): void
+    {
+        if (strtolower(trim((string) ($_SERVER['HTTP_SEC_FETCH_SITE'] ?? ''))) === 'cross-site') {
+            Response::error('This request must come from the shop itself.', 403, 'CROSS_SITE_REFUSED');
+        }
+    }
+
     public static function clientIp(): string
     {
         $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? 'cli');

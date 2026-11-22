@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Support\Input;
 use App\Support\PhoneNumber;
+use App\Support\RateLimiter;
+use App\Support\RequestContext;
 use App\Support\ValidationFailed;
 use App\Config\Env;
 use App\Config\Shop;
@@ -211,6 +213,50 @@ class CheckoutService
                 . ($held === 1 ? 'it' : 'one of them') . ' from Track order, or wait for it to expire, then place this order.'
             );
         }
+
+        // The same visitor with a new email, phone and device each time is still one connection:
+        // a looser cap per network (an IPv4 address, or an IPv6 /64) stops one visitor keeping
+        // the stock off sale with order after order. Several customers can share an address
+        // (mobile networks, offices), so this cap is three times the per-customer one, at least 6.
+        $network = self::clientNetwork();
+        if ($network !== null && self::hasClientNetworkColumn($this->db)) {
+            $fromNetwork = (int) ($this->db->fetchOne(
+                "SELECT COUNT(*) AS c FROM `orders`
+                 WHERE `client_network` = ? AND `order_status` = 'pending_payment' AND (`expires_at` IS NULL OR `expires_at` > NOW())",
+                's',
+                [$network]
+            )['c'] ?? 0);
+            if ($fromNetwork >= max(6, $cap * 3)) {
+                throw new RuntimeException(
+                    'Too many orders are waiting for payment from this connection. Pay for one of them from Track order, or wait for it to expire, then place this order.'
+                );
+            }
+        }
+    }
+
+    /**
+     * SHA-256 of the network an order comes from (an IPv4 address, or the /64 of an IPv6 one), or
+     * null for the shop's own server and private addresses (server-side calls, tests).
+     */
+    public static function clientNetwork(): ?string
+    {
+        $ip = RequestContext::clientIp();
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return null;
+        }
+        return hash('sha256', RateLimiter::networkOf($ip));
+    }
+
+    /** Whether migration 033 has added orders.client_network (an API uploaded before its update). */
+    private static function hasClientNetworkColumn(Database $db): bool
+    {
+        static $has = null;
+        if ($has === null) {
+            $has = (int) ($db->fetchOne(
+                "SELECT COUNT(*) AS c FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'client_network'"
+            )['c'] ?? 0) > 0;
+        }
+        return $has;
     }
 
     /** SHA-256 of the browser's device id (X-Device-Id), or null when it is missing or malformed. */
@@ -446,6 +492,10 @@ class CheckoutService
                         $ageConfirmedAt,
                     ]
                 );
+                $network = self::clientNetwork();
+                if ($network !== null && self::hasClientNetworkColumn($db)) {
+                    $db->executeUpdate("UPDATE `orders` SET `client_network` = ? WHERE `id` = ?", 'si', [$network, $orderId]);
+                }
 
                 // I. Insert Order Items snapshots
                 foreach ($verifiedItems as $item) {
@@ -715,6 +765,16 @@ class CheckoutService
             ];
         }
 
+        // The per-line limit also holds for one item split over several lines (30 lines of the same
+        // item would otherwise reserve 600 of it in one order).
+        $perItem = [];
+        foreach ($verified as $line) {
+            $perItem[$line['variant_id']] = ($perItem[$line['variant_id']] ?? 0) + (int) $line['quantity'];
+            if ($perItem[$line['variant_id']] > self::MAX_QUANTITY_PER_LINE) {
+                throw new InvalidArgumentException('You can order at most ' . self::MAX_QUANTITY_PER_LINE . ' of one item in one order.');
+            }
+        }
+
         return $verified;
     }
 
@@ -936,7 +996,10 @@ class CheckoutService
             [$code]
         );
 
-        if ($promo === null || !(bool) $promo['is_active']) {
+        // A missing, paused or not-yet-started code all get the same answer, so guessing can't
+        // tell which codes exist or find one before it starts.
+        $notStarted = $promo !== null && !empty($promo['starts_at']) && strtotime((string) $promo['starts_at']) > time();
+        if ($promo === null || !(bool) $promo['is_active'] || $notStarted) {
             throw new InvalidArgumentException("Coupon code '{$code}' is invalid or has been deactivated.");
         }
 
@@ -949,9 +1012,6 @@ class CheckoutService
 
         // Check start and expiry dates
         $now = time();
-        if (!empty($promo['starts_at']) && strtotime((string) $promo['starts_at']) > $now) {
-            throw new InvalidArgumentException("Coupon code '{$code}' is not yet active.");
-        }
         if (!empty($promo['expires_at']) && strtotime((string) $promo['expires_at']) < $now) {
             throw new InvalidArgumentException("Coupon code '{$code}' has expired.");
         }

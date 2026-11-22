@@ -309,7 +309,7 @@ final class CatalogSeeder
             if ($row['image_url'] === null) {
                 $this->problems[] = "{$at}: an image is needed.";
             }
-            if ($row['cta_url'] !== '' && !preg_match('#^(/(?!/)|https://)#', $row['cta_url'])) {
+            if ($row['cta_url'] !== '' && !\App\Support\Input::isShopLink($row['cta_url'])) {
                 $this->problems[] = "{$at}: \"cta_url\" must be a store path like /category or an https:// address.";
             }
             foreach (['title' => 255, 'subtitle' => 255, 'cta_text' => 50, 'cta_url' => 255] as $field => $max) {

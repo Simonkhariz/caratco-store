@@ -784,7 +784,9 @@ class AdminDashboardController
     private function sanitizeCsvCell(mixed $value): string
     {
         $str = (string) ($value ?? '');
-        if ($str !== '' && in_array($str[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+        // Also the full-width signs (＝ ＋ － ＠) and the separators some spreadsheet apps read
+        // as the start of a formula (; |).
+        if ($str !== '' && preg_match('/^[=+\-@\t\r;|\x{FF1D}\x{FF0B}\x{FF0D}\x{FF20}]/u', $str) === 1) {
             return "'" . $str;
         }
         return $str;

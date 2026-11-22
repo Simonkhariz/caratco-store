@@ -71,6 +71,11 @@ $overrides = [
     // .env may give this shop its own admin cookie name; the suites expect the usual one
     // (ShopKindsTest checks that another name is honoured).
     'ADMIN_COOKIE_NAME' => 'shopco_admin',
+    // The suites call the API from this PC and pass visitor addresses in X-Forwarded-For
+    // (SecurityHardeningTest), as the storefront does: only this PC is a trusted proxy.
+    'TRUSTED_PROXIES' => '127.0.0.1,::1',
+    // A first-run setup code is a live-server setting, never part of the tests.
+    'SETUP_TOKEN' => '',
 ];
 $lines = file_exists(BASE_PATH . '/.env') ? file(BASE_PATH . '/.env', FILE_IGNORE_NEW_LINES) : [];
 $lines = array_values(array_filter($lines, static function (string $line) use ($overrides): bool {

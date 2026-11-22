@@ -72,6 +72,10 @@ robocopy (Join-Path $src '.next\static') (Join-Path $web '.next\static') /E /NFL
 if ($LASTEXITCODE -ge 8) { throw 'Copying the static files failed' }
 robocopy (Join-Path $src 'public') (Join-Path $web 'public') /E /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw 'Copying the public files failed' }
+# The startup file adds the visitor's real address to X-Forwarded-For before Next.js runs, so a
+# made-up address can't dodge the API's per-visitor limits (server-entry.js explains).
+Move-Item (Join-Path $web 'server.js') (Join-Path $web 'next-server.js')
+Copy-Item (Join-Path $src 'deploy\cpanel\server-entry.js') (Join-Path $web 'server.js')
 
 Step "Adding the picture library for Linux ($Cpu)"
 $sharpVersion = (Get-Content (Join-Path $src 'node_modules\sharp\package.json') -Raw | ConvertFrom-Json).version

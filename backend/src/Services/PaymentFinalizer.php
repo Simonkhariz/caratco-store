@@ -223,7 +223,17 @@ class PaymentFinalizer
             $order = $db->fetchOne("SELECT * FROM `orders` WHERE `id` = ? FOR UPDATE", 'i', [(int) $payment['order_id']]);
 
             if ($payment['status'] !== 'pending') {
-                // Out-of-order failure after success, or a repeated failure: nothing to change.
+                // A failure or reversal for money already confirmed (a chargeback, a reversed
+                // transfer, or a late, out-of-order notice): the payment stays as it is, but the
+                // order is flagged so it isn't shipped before the owner checks the gateway.
+                if (in_array($payment['status'], ['successful', 'partially_refunded'], true) && $order !== null) {
+                    $this->flagAttention(
+                        $db,
+                        (int) $order['id'],
+                        "{$label} later reported payment {$providerReference} as failed or reversed ({$reason}). Check the {$label} dashboard before shipping."
+                    );
+                }
+                // Out-of-order failure after success, or a repeated failure: nothing else to change.
                 return $this->result(
                     $payment['status'] === 'failed' ? self::OUTCOME_ALREADY_PROCESSED : self::OUTCOME_IGNORED,
                     $order,
@@ -284,14 +294,21 @@ class PaymentFinalizer
                 throw new InvalidArgumentException('This payment reference has already been recorded for this order.');
             }
 
-            // One bank transfer can only pay for one order.
+            // One bank transfer can only pay for one order. References are compared without spaces,
+            // dashes or case ("ABC 123" is "abc-123"), and two admins confirming the same reference
+            // at the same moment are taken one after the other (a named lock until this request ends).
+            $normalized = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', $reference));
+            if (strlen($normalized) < 4) {
+                throw new InvalidArgumentException('Enter the bank reference: at least 4 letters or numbers.');
+            }
+            $db->fetchOne("SELECT GET_LOCK(?, 10) AS l", 's', ['shopco_bankref_' . substr(hash('sha256', $normalized), 0, 40)]);
             $usedOn = $db->fetchOne(
                 "SELECT o.`order_number` FROM `payments` p JOIN `orders` o ON o.`id` = p.`order_id`
                  WHERE p.`provider` IN ('manual', 'whatsapp') AND p.`status` IN ('successful', 'partially_refunded', 'refunded')
-                   AND JSON_UNQUOTE(JSON_EXTRACT(p.`provider_payload_redacted`, '$.admin_reference')) = ?
+                   AND UPPER(REGEXP_REPLACE(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`provider_payload_redacted`, '$.admin_reference')), ''), '[^A-Za-z0-9]', '')) = ?
                  LIMIT 1",
                 's',
-                [$reference]
+                [$normalized]
             );
             if ($usedOn !== null) {
                 throw new InvalidArgumentException("This bank reference was already used to confirm order {$usedOn['order_number']}.");

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Support\RequestContext;
+
 use App\Middleware\JsonBodyMiddleware;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
@@ -30,6 +32,7 @@ class AuthController
      */
     public function register(): void
     {
+        RequestContext::refuseCrossSite();
         $result = $this->authService->registerCustomer(JsonBodyMiddleware::getBody());
 
         Response::success($result, 'Account created successfully.', 201);
@@ -40,6 +43,7 @@ class AuthController
      */
     public function login(): void
     {
+        RequestContext::refuseCrossSite();
         $body = JsonBodyMiddleware::getBody();
         $email = (string) ($body['email'] ?? '');
         $password = (string) ($body['password'] ?? '');
@@ -92,6 +96,7 @@ class AuthController
      */
     public function requestMagicLink(): void
     {
+        RequestContext::refuseCrossSite();
         $body = JsonBodyMiddleware::getBody();
 
         $result = $this->authService->requestMagicLink((string) ($body['email'] ?? ''));
@@ -104,6 +109,7 @@ class AuthController
      */
     public function verifyMagicLink(): void
     {
+        RequestContext::refuseCrossSite();
         $body = JsonBodyMiddleware::getBody();
         $token = trim((string) ($body['token'] ?? ''));
 
