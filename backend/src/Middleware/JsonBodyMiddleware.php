@@ -30,7 +30,8 @@ class JsonBodyMiddleware
         // so a form on another website can't post to the API (e.g. sign a visitor in).
         $contentType = $_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? '';
         $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        if (str_contains(strtolower($contentType), 'multipart/form-data') && $path !== '/api/v1/admin/upload-image') {
+        // Compared by its end, so an API served from a sub-folder (/shop-api/api/v1/...) still uploads.
+        if (str_contains(strtolower($contentType), 'multipart/form-data') && !str_ends_with(rtrim($path, '/'), '/api/v1/admin/upload-image')) {
             Response::error('Invalid Content-Type header. Expected application/json for payload requests.', 415, 'UNSUPPORTED_MEDIA_TYPE');
         }
 

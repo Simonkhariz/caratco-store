@@ -827,14 +827,18 @@ function TrackOrderContent() {
                     <span>Destination</span>
                   </h4>
                   <div className="text-sm text-neutral-700 space-y-1">
-                    <p className="font-bold text-neutral-900">
-                      {order.shipping_address_snapshot?.full_name}
-                    </p>
-                    <p>{order.shipping_address_snapshot?.address_line1}</p>
+                    {/* Looked up by a payment reference alone, the order comes without the name,
+                        street and phone (privacy): only the town and state are shown then. */}
+                    {order.shipping_address_snapshot?.full_name && (
+                      <p className="font-bold text-neutral-900">{order.shipping_address_snapshot.full_name}</p>
+                    )}
+                    {order.shipping_address_snapshot?.address_line1 && <p>{order.shipping_address_snapshot.address_line1}</p>}
                     <p>
-                      {order.shipping_address_snapshot?.city}, {order.shipping_address_snapshot?.state}
+                      {[order.shipping_address_snapshot?.city, order.shipping_address_snapshot?.state].filter(Boolean).join(', ')}
                     </p>
-                    <p className="text-neutral-600 pt-1">Phone: {order.shipping_address_snapshot?.phone}</p>
+                    {order.shipping_address_snapshot?.phone && (
+                      <p className="text-neutral-600 pt-1">Phone: {order.shipping_address_snapshot.phone}</p>
+                    )}
                   </div>
                 </div>
 

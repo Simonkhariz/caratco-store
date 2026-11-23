@@ -16,7 +16,9 @@ const http = require('http');
 const emit = http.Server.prototype.emit;
 http.Server.prototype.emit = function patchedEmit(event, req, ...rest) {
   if (event === 'request' && req && req.headers && req.socket) {
-    const real = req.socket.remoteAddress;
+    // A dual-stack server reports IPv4 visitors as ::ffff:1.2.3.4; the API trusts and counts plain IPv4.
+    const raw = req.socket.remoteAddress;
+    const real = raw && raw.startsWith('::ffff:') && /^\d+\.\d+\.\d+\.\d+$/.test(raw.slice(7)) ? raw.slice(7) : raw;
     if (real) {
       const sent = req.headers['x-forwarded-for'];
       const chain = (Array.isArray(sent) ? sent.join(',') : sent || '').trim();

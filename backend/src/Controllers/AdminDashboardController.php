@@ -786,7 +786,9 @@ class AdminDashboardController
         $str = (string) ($value ?? '');
         // Also the full-width signs (＝ ＋ － ＠) and the separators some spreadsheet apps read
         // as the start of a formula (; |).
-        if ($str !== '' && preg_match('/^[=+\-@\t\r;|\x{FF1D}\x{FF0B}\x{FF0D}\x{FF20}]/u', $str) === 1) {
+        $formula = preg_match('/^[=+\-@\t\r;|\x{FF1D}\x{FF0B}\x{FF0D}\x{FF20}]/u', $str);
+        // A cell that isn't valid UTF-8 makes that check fail (false): fall back to its first byte.
+        if ($str !== '' && ($formula === 1 || ($formula === false && in_array($str[0], ['=', '+', '-', '@', "\t", "\r", ';', '|'], true)))) {
             return "'" . $str;
         }
         return $str;

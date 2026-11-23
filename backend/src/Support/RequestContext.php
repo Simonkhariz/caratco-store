@@ -45,16 +45,6 @@ class RequestContext
     }
 
     /**
-     * Best-effort client IP (rate limits, sessions, audit). X-Forwarded-For is only honoured when
-     * the direct peer is a trusted proxy (TRUSTED_PROXIES: addresses or ranges such as
-     * 10.0.0.0/8, e.g. the Next.js server forwarding /api/v1), never from the open internet.
-     *
-     * The header is read from the right: each proxy appends the address it received the request
-     * from, so the entries on the left are whatever the visitor chose to send. The client is the
-     * last entry that is not one of our own proxies. (Taking the leftmost entry would let anyone
-     * pick their own address and step around every rate limit.)
-     */
-    /**
      * Refuses a request a browser marks as coming from another website (Sec-Fetch-Site:
      * cross-site). Used on sign-in, sign-up and sign-in links, so another site can't sign a
      * visitor in to an account it chose. Requests without the header (apps, scripts) are unaffected.
@@ -66,16 +56,26 @@ class RequestContext
         }
     }
 
+    /**
+     * Best-effort client IP (rate limits, sessions, audit). X-Forwarded-For is only honoured when
+     * the direct peer is a trusted proxy (TRUSTED_PROXIES: addresses or ranges such as
+     * 10.0.0.0/8, e.g. the Next.js server forwarding /api/v1), never from the open internet.
+     *
+     * The header is read from the right: each proxy appends the address it received the request
+     * from, so the entries on the left are whatever the visitor chose to send. The client is the
+     * last entry that is not one of our own proxies. (Taking the leftmost entry would let anyone
+     * pick their own address and step around every rate limit.)
+     */
     public static function clientIp(): string
     {
-        $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? 'cli');
+        $remote = self::plainIp((string) ($_SERVER['REMOTE_ADDR'] ?? 'cli'));
         if (!self::isTrustedProxy($remote)) {
             return $remote;
         }
 
         $chain = array_map('trim', explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '')));
         for ($i = count($chain) - 1; $i >= 0; $i--) {
-            $hop = $chain[$i];
+            $hop = self::plainIp($chain[$i]);
             if ($hop === '' || !filter_var($hop, FILTER_VALIDATE_IP)) {
                 break; // a malformed entry: nothing to its left can be trusted
             }
@@ -87,10 +87,26 @@ class RequestContext
         return $remote;
     }
 
+    /**
+     * An IPv4 address written the IPv6 way (::ffff:203.0.113.5, as dual-stack servers report
+     * IPv4 visitors) becomes plain IPv4, so it matches TRUSTED_PROXIES and counts as one visitor.
+     */
+    public static function plainIp(string $ip): string
+    {
+        $ip = trim($ip);
+        if (stripos($ip, '::ffff:') === 0) {
+            $tail = substr($ip, 7);
+            if (filter_var($tail, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+                return $tail;
+            }
+        }
+        return $ip;
+    }
+
     /** Whether $ip is listed in TRUSTED_PROXIES (exact addresses or CIDR ranges, IPv4 or IPv6). */
     public static function isTrustedProxy(string $ip): bool
     {
-        $address = @inet_pton($ip);
+        $address = @inet_pton(self::plainIp($ip));
         if ($address === false) {
             return false;
         }

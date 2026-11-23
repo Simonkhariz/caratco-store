@@ -459,6 +459,12 @@ final class CatalogSeeder
             return null;
         }
         if (preg_match('#^(/(?!/)|https://)#', $value)) {
+            // The same rule as the admin forms, so a seeded picture never makes its product,
+            // category or banner impossible to save later.
+            if (!Input::isPictureAddress($value)) {
+                $this->problems[] = "{$at}: \"{$value}\" must be one of the shop's own pictures (/images/... or /uploads/..., plain file names) or an https:// address.";
+                return null;
+            }
             return $value;
         }
         $extension = strtolower(pathinfo($value, PATHINFO_EXTENSION));

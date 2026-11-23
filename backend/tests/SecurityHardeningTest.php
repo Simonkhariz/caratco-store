@@ -79,6 +79,9 @@ $t->check('an IPv6 address counts as its /64', '2001:db8:1:2::/64', RateLimiter:
 $t->check('another address in the same /64 counts the same', '2001:db8:1:2::/64', RateLimiter::networkOf('2001:db8:1:2::9'));
 $t->check('an IPv4 address stays itself', '203.0.113.5', RateLimiter::networkOf('203.0.113.5'));
 $t->check('an IPv4-mapped address stays itself', '::ffff:203.0.113.5', RateLimiter::networkOf('::ffff:203.0.113.5'));
+$t->check('an IPv4 address written the IPv6 way is read as IPv4', '203.0.113.5', \App\Support\RequestContext::plainIp('::ffff:203.0.113.5'));
+$t->check('a real IPv6 address is left alone', '2001:db8::1', \App\Support\RequestContext::plainIp('2001:db8::1'));
+$t->check('::ffff:127.0.0.1 is the trusted local proxy too', true, \App\Support\RequestContext::isTrustedProxy('::ffff:127.0.0.1'));
 $guessEmail = $t->uniq('nobody') . '@example.test';
 $codes = [];
 for ($i = 1; $i <= 7; $i++) {
@@ -112,14 +115,20 @@ $capBefore = (string) $t->scalar("SELECT `value` FROM `store_settings` WHERE `ke
 $t->cleanup(fn () => $t->sql("UPDATE `store_settings` SET `value` = ? WHERE `key_name` = ?", 'ss', [$capBefore, CheckoutService::UNPAID_CAP_SETTING]));
 $t->sql("UPDATE `store_settings` SET `value` = '2' WHERE `key_name` = ?", 's', [CheckoutService::UNPAID_CAP_SETTING]);
 $ok = 0;
-for ($i = 0; $i < 6; $i++) {
+for ($i = 0; $i < 10; $i++) {
     [$res] = $order([$line(1)], '203.0.113.77');
     $ok += $res['status'] === 201 ? 1 : 0;
 }
-$t->check('six orders from one connection, each with a new email and phone: placed', 6, $ok);
-[$seventh] = $order([$line(1)], '203.0.113.77');
-$t->check('the seventh is refused', 409, $seventh['status']);
-$t->ok('and says why', str_contains((string) TestKit::get($seventh, 'error.message'), 'this connection'), (string) TestKit::get($seventh, 'error.message'));
+$t->check('ten orders from one connection (shared mobile networks), each with a new email and phone: placed', 10, $ok);
+// The cap matters over the hours unpaid orders are held, long after the 10-per-10-minutes order
+// limit has reset: clear that counter so the cap itself answers.
+$resetOrderLimit = static fn () => $t->sql("DELETE FROM `rate_limits` WHERE `id` = ?", 's', [hash('sha256', 'checkout_order|203.0.113.77')]);
+$resetOrderLimit();
+[$eleventh] = $order([$line(1)], '203.0.113.77');
+$t->check('the eleventh is refused', 409, $eleventh['status']);
+$t->ok('and says why', str_contains((string) TestKit::get($eleventh, 'error.message'), 'this connection'), (string) TestKit::get($eleventh, 'error.message'));
+[$mapped] = $order([$line(1)], '::ffff:203.0.113.77');
+$t->check('the same address written the IPv6 way counts as the same connection', 409, $mapped['status']);
 [$other] = $order([$line(1)], '203.0.113.78');
 $t->check('another connection can still order', 201, $other['status']);
 $t->sql("UPDATE `store_settings` SET `value` = '0' WHERE `key_name` = ?", 's', [CheckoutService::UNPAID_CAP_SETTING]);
@@ -132,8 +141,11 @@ $init = $t->http('POST', "/checkout/orders/{$o['order_number']}/initialize-payme
 $t->check('a WhatsApp payment is started', 200, $init['status']);
 $t->sql("UPDATE `orders` SET `expires_at` = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE `id` = ?", 'i', [(int) $o['id']]);
 $late = $t->http('POST', "/checkout/orders/{$o['order_number']}/payment-sent", ['headers' => ['X-Guest-Access-Token: ' . $token], 'json' => ['guest_access_token' => $token]]);
-$t->check('after its window closed: not recorded', false, TestKit::get($late, 'data.recorded'));
-$t->check('and nothing is held', null, $t->scalar("SELECT `customer_marked_paid_at` FROM `orders` WHERE `id` = ?", 'i', [(int) $o['id']]));
+$t->check('after its window closed: the claim is still recorded (so a late transfer can be found)', true, TestKit::get($late, 'data.recorded'));
+$t->ok('the customer is told the window closed', str_contains((string) TestKit::get($late, 'message'), 'window has closed'), (string) TestKit::get($late, 'message'));
+$lateRow = $t->sql("SELECT `customer_marked_paid_at`, `expires_at` < NOW() AS still_closed FROM `orders` WHERE `id` = ?", 'i', [(int) $o['id']])[0];
+$t->ok('the claim time is kept', $lateRow['customer_marked_paid_at'] !== null);
+$t->check('but the order is not held any longer', 1, (int) $lateRow['still_closed']);
 
 [$res2, $o2] = $order([$line(1)]);
 $token2 = (string) TestKit::get($res2, 'data.guest_access_token');
@@ -177,6 +189,14 @@ for ($i = 0; $i < 32; $i++) {
     $quoteCodes[] = $t->http('POST', '/checkout/quote', ['headers' => [$from('203.0.113.91')], 'json' => ['items' => [$line(1)], 'coupon_code' => 'GUESS' . $i]])['status'];
 }
 $t->ok('guessing codes through the price check hits the promo limit', in_array(429, $quoteCodes, true), implode(',', array_unique($quoteCodes)));
+$real = 'REAL' . strtoupper(bin2hex(random_bytes(3)));
+$t->sql("INSERT INTO `promotions` (`code`, `description`, `discount_type`, `discount_percent`, `max_uses`, `used_count`, `is_active`) VALUES (?, 'real', 'percent', 10, 0, 0, 1)", 's', [$real]);
+$t->cleanup(fn () => $t->sql("DELETE FROM `promotions` WHERE `code` = ?", 's', [$real]));
+$realCodes = [];
+for ($i = 0; $i < 35; $i++) {
+    $realCodes[] = $t->http('POST', $i % 2 ? '/checkout/validate-promo' : '/checkout/quote', ['headers' => [$from('203.0.113.92')], 'json' => ['code' => $real, 'coupon_code' => $real, 'subtotal' => 50000, 'items' => [$line(1)]]])['status'];
+}
+$t->ok('a real code checked again and again (shoppers sharing an address) is never limited', !in_array(429, $realCodes, true), implode(',', array_unique($realCodes)));
 
 // -----------------------------------------------------------------------------
 $t->section('A bank reference counts once, whatever its spacing or capitals');
@@ -196,6 +216,11 @@ $flag = $t->sql("SELECT `requires_attention`, `attention_reason`, `payment_statu
 $t->check('flagged for attention', 1, (int) $flag['requires_attention']);
 $t->ok('with the reason', str_contains((string) $flag['attention_reason'], 'reversed'), (string) $flag['attention_reason']);
 $t->check('the payment itself is unchanged', 'successful', $flag['payment_status']);
+[$r5, $o5] = $order([$line(1)]);
+$A('POST', "/admin/orders/{$o5['order_number']}/confirm-payment", ['json' => ['reference' => 'TRF ' . strtoupper(bin2hex(random_bytes(4)))]]);
+$paidRef5 = (string) $t->scalar("SELECT `provider_reference` FROM `payments` WHERE `order_id` = ? AND `status` = 'successful' LIMIT 1", 'i', [(int) $o5['id']]);
+(new PaymentFinalizer())->finalizeFailure($paidRef5, 'Transaction failed or was declined.', [], 'Kora');
+$t->check('a late repeat of an earlier failed attempt does not flag a paid order', 0, (int) $t->scalar("SELECT `requires_attention` FROM `orders` WHERE `id` = ?", 'i', [(int) $o5['id']]));
 
 // -----------------------------------------------------------------------------
 $t->section('Sign-in can only be posted from the shop itself');

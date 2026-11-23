@@ -38,6 +38,14 @@ class CheckoutController
     private Database $db;
     /** How the last canViewOrder() let the caller in: 'owner', 'token', 'email' or 'reference'. */
     private string $accessBy = '';
+    /** Wrong promo codes one visitor may try in 10 minutes (promo check and price check together). */
+    private const PROMO_TRIES = 30;
+
+    /** A code that doesn't exist (or is paused or not started): the answer a guesser gets. */
+    private static function isPromoError(string $message): bool
+    {
+        return str_starts_with($message, 'Coupon code ') && str_contains($message, 'is invalid or has been deactivated');
+    }
 
     public function __construct(?CheckoutService $checkoutService = null, ?Database $db = null)
     {
@@ -53,17 +61,23 @@ class CheckoutController
     {
         RateLimiter::attempt('checkout_quote', RequestContext::clientIp(), 150, 600);
         $body = JsonBodyMiddleware::getBody();
-        // A price check with a code is also a code check: it shares the promo-code limit, so
-        // codes can't be guessed five times faster here.
+        // A price check with a code is also a code check: wrong codes count toward the same limit
+        // as the promo-code check, so codes can't be guessed five times faster here. Right codes
+        // never count, so shoppers sharing one address (mobile networks, offices) are never
+        // stopped while using a real code.
         $code = $body['coupon_code'] ?? $body['promo_code'] ?? $body['code'] ?? null;
-        if (is_string($code) && trim($code) !== '') {
-            RateLimiter::attempt('promo_validate', RequestContext::clientIp(), 30, 600, 'Too many promo code attempts. Please wait a few minutes.');
+        $withCode = is_string($code) && trim($code) !== '';
+        if ($withCode) {
+            RateLimiter::guard('promo_validate', RequestContext::clientIp(), self::PROMO_TRIES, 600, 'Too many wrong promo codes. Please wait a few minutes.');
         }
 
         try {
             $quote = $this->checkoutService->getQuote($body);
             Response::success($quote, 'Checkout quotation generated successfully.');
         } catch (InvalidArgumentException $e) {
+            if ($withCode && self::isPromoError($e->getMessage())) {
+                RateLimiter::hit('promo_validate', RequestContext::clientIp(), 600);
+            }
             Response::error($e->getMessage(), 422, 'VALIDATION_ERROR');
         } catch (\mysqli_sql_exception $e) {
             // Never surface raw SQL errors (mysqli_sql_exception extends RuntimeException).
@@ -664,7 +678,9 @@ class CheckoutController
      */
     public function validatePromo(): void
     {
-        RateLimiter::attempt('promo_validate', RequestContext::clientIp(), 30, 600, 'Too many promo code attempts. Please wait a few minutes.');
+        // Only wrong codes count (see quote()), so re-checking a real code as the cart changes
+        // never uses the limit up.
+        RateLimiter::guard('promo_validate', RequestContext::clientIp(), self::PROMO_TRIES, 600, 'Too many wrong promo codes. Please wait a few minutes.');
         $body = JsonBodyMiddleware::getBody();
         $code = trim((string) ($body['code'] ?? $body['coupon_code'] ?? ''));
         $subtotal = isset($body['subtotal']) ? (float) $body['subtotal'] : 0.0;
@@ -688,6 +704,9 @@ class CheckoutController
                 'description' => $result['coupon']['description'],
             ], "Promo code {$result['coupon']['code']} is valid!");
         } catch (InvalidArgumentException $e) {
+            if (self::isPromoError($e->getMessage())) {
+                RateLimiter::hit('promo_validate', RequestContext::clientIp(), 600);
+            }
             Response::error($e->getMessage(), 422, 'INVALID_PROMOTION');
         } catch (Throwable $e) {
             error_log('[Promo Validation Failure] ' . $e->getMessage());
@@ -816,13 +835,21 @@ class CheckoutController
                 'iii',
                 [PaymentAttempts::manualWindowMinutes(), PaymentAttempts::maxHoldMinutes() + 120, (int) $order['id']]
             ) > 0;
+            if (!$firstClaim) {
+                // The window had already closed: the claim is still recorded and the store alerted
+                // (so a late transfer can be found and recorded or refunded), but nothing is held
+                // any longer: the order expires as planned and its items go back on sale.
+                $lateClaim = $this->db->executeUpdate(
+                    "UPDATE `orders` SET `customer_marked_paid_at` = NOW()
+                     WHERE `id` = ? AND `order_status` = 'pending_payment' AND `customer_marked_paid_at` IS NULL",
+                    'i',
+                    [(int) $order['id']]
+                ) > 0;
+                $firstClaim = $lateClaim;
+            }
         }
         $fresh = $this->db->fetchOne("SELECT `customer_marked_paid_at`, `expires_at` FROM `orders` WHERE `id` = ?", 'i', [(int) $order['id']]);
-        if ($fresh['customer_marked_paid_at'] === null) {
-            // Its payment window closed before the tap: nothing is held or recorded.
-            Response::success(['order_number' => $orderNumber, 'recorded' => false, 'order_status' => 'pending_payment', 'expires_at' => $fresh['expires_at']],
-                'The payment window for this order has closed. If you have already sent the money, message the store on WhatsApp with your order number.');
-        }
+        $windowClosed = $fresh['expires_at'] !== null && strtotime((string) $fresh['expires_at']) <= time();
 
         if ($firstClaim) {
             try {
@@ -844,7 +871,9 @@ class CheckoutController
             'order_status' => 'pending_payment',
             'customer_marked_paid_at' => $fresh['customer_marked_paid_at'],
             'expires_at' => $fresh['expires_at'],
-        ], 'Thanks! The store has been told and will confirm your transfer.');
+        ], $windowClosed
+            ? 'The store has been told. This order\'s payment window has closed, so if the store can\'t confirm your transfer they will refund it.'
+            : 'Thanks! The store has been told and will confirm your transfer.');
     }
 
     /** The gateway reference from the return redirect (query string) or the page (header). */

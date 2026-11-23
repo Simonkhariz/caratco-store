@@ -226,7 +226,10 @@ class PaymentFinalizer
                 // A failure or reversal for money already confirmed (a chargeback, a reversed
                 // transfer, or a late, out-of-order notice): the payment stays as it is, but the
                 // order is flagged so it isn't shipped before the owner checks the gateway.
-                if (in_array($payment['status'], ['successful', 'partially_refunded'], true) && $order !== null) {
+                // Only a real reversal or chargeback: a late repeat of an earlier failed attempt's
+                // notice (Kora retries under one reference) must not flag a paid order.
+                if (in_array($payment['status'], ['successful', 'partially_refunded'], true) && $order !== null
+                    && preg_match('/revers|chargeback|charge back|dispute/i', $reason) === 1) {
                     $this->flagAttention(
                         $db,
                         (int) $order['id'],

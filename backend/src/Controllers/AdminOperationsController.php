@@ -1590,6 +1590,8 @@ class AdminOperationsController
                 [$adminId, hash('sha256', (string) $current)]
             );
             LoginDevice::forgetAll($adminId);
+            // ...except the browser making the change, which stays known.
+            LoginDevice::remember($adminId);
         }
 
         AuditService::record(

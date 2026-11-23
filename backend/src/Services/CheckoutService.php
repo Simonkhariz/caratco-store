@@ -217,7 +217,7 @@ class CheckoutService
         // The same visitor with a new email, phone and device each time is still one connection:
         // a looser cap per network (an IPv4 address, or an IPv6 /64) stops one visitor keeping
         // the stock off sale with order after order. Several customers can share an address
-        // (mobile networks, offices), so this cap is three times the per-customer one, at least 6.
+        // (mobile networks, offices), so this cap is five times the per-customer one, at least 10.
         $network = self::clientNetwork();
         if ($network !== null && self::hasClientNetworkColumn($this->db)) {
             $fromNetwork = (int) ($this->db->fetchOne(
@@ -226,7 +226,7 @@ class CheckoutService
                 's',
                 [$network]
             )['c'] ?? 0);
-            if ($fromNetwork >= max(6, $cap * 3)) {
+            if ($fromNetwork >= max(10, $cap * 5)) {
                 throw new RuntimeException(
                     'Too many orders are waiting for payment from this connection. Pay for one of them from Track order, or wait for it to expire, then place this order.'
                 );
